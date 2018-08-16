@@ -1,0 +1,38 @@
+---
+title: "Capstone Ideas"
+author: "Kunal Kerai"
+date: "August 15, 2018"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#Idea 1: Reducing Unhealthy Employee Attrition
+Voluntary attrition, or "unhealthy" attrition is a problem that plagues every major corporation. Given that labor costs make up the majority of the operating costs of a company, corporations want to mitigate voluntary attrition and/or fully utilize their people without overloading them either (as the consequential burnout would result in attrition). Most companies also realize that top talent will leave for different reasons, so the question is: based on attrition data, can we build profiles of employees with high flight risk to predict who will leave the company so as to create interventions to prevent them from doing so?
+
+[Data Source](https://www.ibm.com/communities/analytics/watson-analytics-blog/guide-to-sample-datasets/)
+
+#Idea 2: Increasing Social Mobility by Investing into Underperforming Schools in NYC
+
+PASSNYC is a not-for-profit organization that facilitates a collective impact that is dedicated to broadening educational opportunities for New York City's talented and underserved students. New York City is home to some of the most impressive educational institutions in the world, yet in recent years, the City's specialized high schools - institutions with historically transformative impact on student outcomes - have seen a shift toward more homogeneous student body demographics.
+
+PASSNYC uses public data to identify students within New York City's under-performing school districts and, through consulting and collaboration with partners, aims to increase the diversity of students taking the Specialized High School Admissions Test (SHSAT). By focusing efforts in under-performing areas that are historically underrepresented in SHSAT registration, we will help pave the path to specialized high schools for a more diverse group of students.
+
+PASSNYC and its partners provide outreach services that improve the chances of students taking the SHSAT and receiving placements in these specialized high schools. The current process of identifying schools is effective, but PASSNYC could have an even greater impact with a more informed, granular approach to quantifying the potential for outreach at a given school. Proxies that have been good indicators of these types of schools include data on English Language Learners, Students with Disabilities, Students on Free/Reduced Lunch, and Students with Temporary Housing.
+
+Part of this challenge is to assess the needs of students by using publicly available data to quantify the challenges they face in taking the SHSAT. The best solutions will enable PASSNYC to identify the schools where minority and underserved students stand to gain the most from services like after school programs, test preparation, mentoring, or resources for parents.
+
+[Data Source](https://www.kaggle.com/passnyc/data-science-for-good)
+
+#Idea 3: Investing Money into Stocks for Retirement
+Communities of color and first generation immigrants tend to invest very late, very little, or nothing at all when it comes to generating passive income or for their retirement. In many cases, they feel like they don't understand the markets to invest, don't trust them, or cannot stand the risk involved. As a result, they miss out on opportunities to create generational wealth.
+
+My mother for example, is 49, and has nothing saved for her retirement. She's asked me to help her invest since I used to do it as a hobby and enjoyed a 43% annual rate of return over the past three years (when I started investing). Her goal is to invest in riskier companies in order to catch up on the missed returns she could have enjoyed should she have invested earlier.
+
+The question we face however is what are strong indicators of a company's future growth? In addition, how can we determine whether a stock is undervalued based on fundamental data? And as a result, how should we invest her savings of $100,000 to provide her with a rate of return higher than that of the NYSE index?
+
+[Data Source](https://www.kaggle.com/dgawlik/nyse/home)
