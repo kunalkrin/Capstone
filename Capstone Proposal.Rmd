@@ -1,0 +1,32 @@
+---
+title: "Project Proposal"
+author: "Kunal Kerai"
+date: "August 16, 2018"
+output: html_document
+---
+
+#Problem
+With limited time and resources, PASSNYC-- an NGO-- must be strategic in systemically improving the diversity pipeline and social mobility of certain disadvantaged groups into the specialized schools. The main question to be answered is where will PASSNYC's investment produce the greatest ROI for the services they offer (after school programs, test preparation, mentoring, or resources for parents)?
+
+#Client
+PASSNYC [is a non-profit volunteer organization dedicated to broadening educational opportunities for New York City's talented underserved students.](http://www.passnyc.org/)
+
+They care because the very mission of the organization to help those in underserved areas to take the SHSAT in order for those students and their families to engage in social mobility, and to diversify the pipelines into specialized schools.
+
+While they have a model to predict what schools they want to invest themselves in, they are looking for deeper insights so they can maximize their ROI on their efforts to most effectively create change.
+
+#Data
+The data will come from the provided dataset from [here](https://www.kaggle.com/passnyc/data-science-for-good)
+
+#Approach
+1. Learn more about the SHSAT and specialized schools 
+2. Read documentation to understand all the variables
+3. Combine two tables into one
+4. Clean data to fill in missing values (with mean) and keep relevant variables
+5. Perform EDA with given proxies and find relationships with a pairwise function
+6. Produce relevant key findings to answer problems and package into slide deck
+
+#Deliverables
+* Publish code to GitHub
+* Produce slide deck
+
