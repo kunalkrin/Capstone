@@ -2,16 +2,16 @@
 Capstone project for Springboard Data Science Course for Beginners
 
 ##Data Dictionary
-school: school name	
-DBN	district	
-lat	
-long	
-address	
-City	
+*school: school name	
+*DBN	district	
+*lat	
+*long	
+*address	
+*City	
 zip	
-Grades	
-commSchool	
-eni	income	
+*Grades	
+*commSchool	
+*eni	income	
 pctELL	
 pctAsian	
 pctBlack	
