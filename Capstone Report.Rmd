@@ -1,0 +1,165 @@
+---
+title: "Social Equity, Access and the New York School System"
+author: "Kunal Kerai"
+date: "August 29, 2018"
+output:
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Background and Problem Statement
+PASSNYC is a not-for-profit organization that facilitates a collective impact that is dedicated to broadening educational opportunities for New York City's talented and underserved students. New York City is home to some of the most impressive educational institutions in the world, yet in recent years, the City's specialized high schools - institutions with historically transformative impact on student outcomes - have seen a shift toward more homogeneous student body demographics.
+
+PASSNYC uses public data to identify students within New York City's under-performing school districts and, through consulting and collaboration with partners, aims to increase the diversity of students taking the Specialized High School Admissions Test (SHSAT). By focusing efforts in under-performing areas that are historically underrepresented in SHSAT registration, we will help pave the path to specialized high schools for a more diverse group of students.
+
+With limited time and resources, PASSNYC must be strategic in systemically improving the diversity pipeline and social mobility of certain disadvantaged groups into the specialized schools. The main question to be answered is where will PASSNYC's investment produce the greatest ROI for the services they offer (after school programs, test preparation, mentoring, or resources for parents)?
+
+## Data Cleaning
+
+### Loading Libraries and Data
+Let's load some libraries we will use.
+```{r}
+library(tidyverse)
+library(ggplot2)
+```
+
+
+Let's load our data from the table:
+```{r echo=TRUE}
+reg <- read_csv("D5 SHSAT Registrations and Testers.csv")
+school <- read_csv("2016 School Explorer.csv")
+```
+
+Before we proceed, let's take a look at the initial data.
+```{r echo=FALSE}
+head(reg)
+
+head(school)
+```
+
+Our data looks pretty clean by most standards, but there is work to be done for sure. For example, we'll need to rename some of our variable names, join our two tables, etc. Let's move forward with some cleaning.
+ 
+In order to make our data analysis easier, let's start cleaning the data. Let's begin by focusing on `reg`.
+
+### Reg
+We begin by renaming the columns we plan to use.
+
+```{r echo=F}
+reg<- reg %>%
+  rename(school = `School name`,
+         year = `Year of SHST`,
+         grade = `Grade level`,
+         enroll = `Enrollment on 10/31`,
+         registered = `Number of students who registered for the SHSAT`,
+         took = `Number of students who took the SHSAT`)
+```
+
+
+With this table there are multiple entries for the same school due to years or grades. Let's find the distinct number of schools, calculate a mean for the school and save it so we can easil join it with `school`.
+```{r}
+reg<- reg %>%
+  group_by(school) %>%
+  mutate_if(is.numeric, mean) %>%
+  mutate_if(is.character, funs(paste(unique(.), collapse = "_"))) %>%
+  distinct()
+
+
+reg$school<-toupper(reg$school)
+
+#Let's remove some columns that have no use for our future analysis.
+reg<-reg %>%
+  select(-year )%>%
+  select(-grade)
+
+
+#Calculating percentages of those who registered of the total population, registered AND took the test, and those who took the test of the total population
+reg<-reg%>%
+  mutate(regPct = registered/enroll)%>%
+  mutate(tookPct = took/enroll)%>%
+  mutate(yield = took/registered)
+
+```
+
+Now let's do the same for `school`.
+```{r}
+#renaming some columns
+
+school<- school %>%
+  rename(school = `School Name`,
+         address = `Address (Full)`,
+         DBN = `Location Code`, 
+         lat =  Latitude,
+         long = Longitude,
+         zip = Zip,
+         eni = `Economic Need Index`,
+         district = District,
+         commSchool = `Community School?`,
+         income = `School Income Estimate`,
+         pctELL = `Percent ELL`,
+         pctAsian = `Percent Asian`,
+         pctBlack = `Percent Black`,
+         pctBlackHispanic = `Percent Black / Hispanic`,
+         pctHispanic = `Percent Hispanic`,
+         pctWhite = `Percent White`,
+         pctAttend = `Student Attendance Rate`,
+         pctAbsentChronic = `Percent of Students Chronically Absent`,
+         pctRigor = `Rigorous Instruction %`,
+         ratingRigor = `Rigorous Instruction Rating`,
+         pctCollab = `Collaborative Teachers %`,
+         ratingCollab = `Collaborative Teachers Rating`,
+         pctSupp = `Supportive Environment %`,
+         ratingSupp = `Supportive Environment Rating`,
+         pctLeader = `Effective School Leadership %`,
+         ratingLeader = `Effective School Leadership Rating`,
+         pctCommunity = `Strong Family-Community Ties %`,
+         ratingCommunity = `Strong Family-Community Ties Rating`,
+         pctTrust = `Trust %`,
+         ratingTrust = `Trust Rating`,
+         avgELA = `Average ELA Proficiency`,
+         avgMath = `Average Math Proficiency`)
+
+
+#remove unneccessary columns
+school<-school%>%
+  select(-`Adjusted Grade`)%>%
+  select(-`New?`)%>%
+  select(-`Other Location Code in LCGMS`)%>%
+  select(-`SED Code`)
+         
+```         
+
+Now we're going to join the two tables together. We will also need to clean this table a little bit as a result of reconciliation.
+```{r}
+school_clean <- full_join(school, reg, by = "DBN" )
+
+school_clean <- school_clean%>%
+  filter(!is.na(school.x))%>%
+  select(-school.y)%>%
+  rename(school = school.x)
+```
+
+Now there is one final step, we need to add quantitative scores for our ratings. To easily do that, let's create a nested if_else function, and apply it.
+```{r}
+quantScore <- function(x){
+  if_else(grepl("Not Meeting Target", x),1 ,
+          if_else(grepl("Approaching Target", x),2 ,
+                  if_else(grepl("Meeting Target", x),3 , 
+                          if_else(grepl("Exceeding Target", x), 4, 0))))
+  
+}
+
+school_clean<- school_clean%>%
+  mutate(quantRigor = quantScore(ratingRigor)) %>%
+  mutate(quantCollab = quantScore(ratingCollab)) %>%
+  mutate(quantSupp = quantScore(ratingSupp)) %>%
+  mutate(quantLeader = quantScore(ratingLeader)) %>%
+  mutate(quantCommunity = quantScore(ratingCommunity)) %>%
+  mutate(quantTrust = quantScore(ratingTrust))
+```
+
+Looks like our table is ready for analysis. Now let's save it as a brand new data sheet for anyone who wants to use it for future analysis, and of course, for our own analysis.
+
+`write_csv(school_clean, "SHSAT_data.csv")`
