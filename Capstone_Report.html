@@ -279,6 +279,26 @@ $(document).ready(function () {
 <h3>Reg</h3>
 <p>We begin by renaming the columns we plan to use.</p>
 <p>With this table there are multiple entries for the same school due to years or grades. Let’s find the distinct number of schools, calculate a mean for the school and save it so we can easil join it with <code>school</code>.</p>
+<pre class="r"><code>reg&lt;- reg %&gt;%
+  group_by(school) %&gt;%
+  mutate_if(is.numeric, mean) %&gt;%
+  mutate_if(is.character, funs(paste(unique(.), collapse = &quot;_&quot;))) %&gt;%
+  distinct()
+
+
+reg$school&lt;-toupper(reg$school)
+
+#Let's remove some columns that have no use for our future analysis.
+reg&lt;-reg %&gt;%
+  select(-year )%&gt;%
+  select(-grade)
+
+
+#Calculating percentages of those who registered of the total population, registered AND took the test, and those who took the test of the total population
+reg&lt;-reg%&gt;%
+  mutate(regPct = registered/enroll)%&gt;%
+  mutate(tookPct = took/enroll)%&gt;%
+  mutate(yield = took/registered)</code></pre>
 <p>Now let’s do the same for <code>school</code>.</p>
 <pre class="r"><code>#renaming some columns
 
@@ -314,7 +334,15 @@ school&lt;- school %&gt;%
          pctTrust = `Trust %`,
          ratingTrust = `Trust Rating`,
          avgELA = `Average ELA Proficiency`,
-         avgMath = `Average Math Proficiency`)</code></pre>
+         avgMath = `Average Math Proficiency`)
+
+
+#remove unneccessary columns
+school&lt;-school%&gt;%
+  select(-`Adjusted Grade`)%&gt;%
+  select(-`New?`)%&gt;%
+  select(-`Other Location Code in LCGMS`)%&gt;%
+  select(-`SED Code`)</code></pre>
 <p>Now we’re going to join the two tables together. We will also need to clean this table a little bit as a result of reconciliation.</p>
 <pre class="r"><code>school_clean &lt;- full_join(school, reg, by = &quot;DBN&quot; )
 
@@ -323,8 +351,7 @@ school_clean &lt;- school_clean%&gt;%
   select(-school.y)%&gt;%
   rename(school = school.x)</code></pre>
 <p>Now there is one final step, we need to add quantitative scores for our ratings. To easily do that, let’s create a nested if_else function, and apply it.</p>
-<pre class="r"><code>#let's turn some qualitative ratings into quantitative scores. First, let's create a function to make creating these new columns easier.
-quantScore &lt;- function(x){
+<pre class="r"><code>quantScore &lt;- function(x){
   if_else(grepl(&quot;Not Meeting Target&quot;, x),1 ,
           if_else(grepl(&quot;Approaching Target&quot;, x),2 ,
                   if_else(grepl(&quot;Meeting Target&quot;, x),3 , 
@@ -342,6 +369,9 @@ school_clean&lt;- school_clean%&gt;%
 <p>Looks like our table is ready for analysis. Now let’s save it as a brand new data sheet for anyone who wants to use it for future analysis, and of course, for our own analysis.</p>
 <p><code>write_csv(school_clean, &quot;SHSAT_data.csv&quot;)</code></p>
 </div>
+</div>
+<div id="exploratory-data-analysis" class="section level2">
+<h2>Exploratory Data Analysis</h2>
 </div>
 
 

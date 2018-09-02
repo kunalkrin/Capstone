@@ -127,7 +127,9 @@ school<-school%>%
   select(-`Adjusted Grade`)%>%
   select(-`New?`)%>%
   select(-`Other Location Code in LCGMS`)%>%
-  select(-`SED Code`)
+  select(-`SED Code`)%>%
+  select(-starts_with('Grade'))
+
          
 ```         
 
@@ -163,3 +165,6 @@ school_clean<- school_clean%>%
 Looks like our table is ready for analysis. Now let's save it as a brand new data sheet for anyone who wants to use it for future analysis, and of course, for our own analysis.
 
 `write_csv(school_clean, "SHSAT_data.csv")`
+
+## Exploratory Data Analysis
+
