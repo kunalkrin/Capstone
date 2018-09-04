@@ -1,0 +1,86 @@
+---
+title: "Milestone Report"
+author: "Kunal Kerai"
+date: "September 4, 2018"
+output: html_document
+---
+
+# An introduction to the problem (based on your earlier Capstone submissions).
+
+PASSNYC -- a not-for-profit organization that facilitates a collective impact-- is dedicated to broadening educational opportunities for New York City's talented and underserved students. New York City is home to some of the most impressive educational institutions in the world, yet in recent years, the City's specialized high schools - institutions with historically transformative impact on student outcomes - have seen a shift toward more homogeneous student body demographics.
+
+PASSNYC uses public data to identify students within New York City's under-performing school districts and, through consulting and collaboration with partners, aims to increase the diversity of students taking the Specialized High School Admissions Test (SHSAT). By focusing efforts in under-performing areas that are historically underrepresented in SHSAT registration, we will help pave the path to specialized high schools for a more diverse group of students.
+
+With limited time and resources, PASSNYC must be strategic in systemically improving the diversity pipeline and social mobility of certain disadvantaged groups into the specialized schools. The main question to be answered is where will PASSNYC's investment produce the greatest ROI for the services they offer (after school programs, test preparation, mentoring, or resources for parents)?
+
+# A deeper dive into the data set:
+
+## What important fields and information does the data set have?
+
+* school: school name	
+* DBN: State Education Department Code	
+* district	
+* lat: lattitude coordinates of school	
+* long: longitude coordinates of school 	
+* address: full address of school	
+* City	
+* zip	
+* commSchool: Is the school a community school (Y/N)?
+* eni	income: (%temp housing) + (% HRA eligible x 0.5) + (% free lunch eligible x 0.5). The higher the index, the higher the need.
+* pctELL: percent of English Language Learners
+
+
+* Race Percentages: percent of school that identifies as a certain race. 
+    + pctAsian
+    + pctBlack
+    + pctHispanic
+    + pctBlackHispanic:  percent of Black students + percent of Hispanic students
+    + pctWhite: White
+    
+  
+* Attendance
+    + pctAttend: total number of days attended by all students / total number of days on register for all students	
+    + pctAbsentChronic: percent of students missing 10% of school days - or 18 days+ per year in a 180-day school year
+
+
+* Psychosocial Ratings
+    + pctRigor: How well the curriculum and instruction engage students, build critical-thinking skills, and are aligned to the Common Core
+    + ratingRigor: How well the curriculum and instruction engage students, build critical-thinking skills, and are aligned to the Common Core
+    + pctCollab: How well teachers participate in opportunities to develop, grow, and contribute to the continuous improvement of the school community  
+    + ratingCollab: How well teachers participate in opportunities to develop, grow, and contribute to the continuous improvement of the school community
+    + pctSupp: How well the school establishes a culture where students feel safe, challenged to grow, and supported to meet high expectations
+    + ratingSupp: How well the school establishes a culture where students feel safe, challenged to grow, and supported to meet high expectations 	
+    + pctLeader: How well school leadership inspires the school community with a clear instructional vision and effectively distributes leadership to realize this vision	
+    + ratingLeader: How well school leadership inspires the school community with a clear instructional vision and effectively distributes leadership to realize this vision	
+    + pctCommunity: How well the school forms effective partnerships with families to improve the school	
+    + ratingCommunity: How well the school forms effective partnerships with families to improve the school
+    + pctTrust: Whether the relationships between administrators, educators, students, and families are based on trust and respect
+    + ratingTrust: Whether the relationships between administrators, educators, students, and families are based on trust and respect
+
+* Average School Scores for English (ELA) and Math sections
+    + avgELA
+    + avgMath
+
+* Students and test statistics for District 5/6
+    + enroll: number of students enrolled in the school
+    + registered: number of students who registered for SHSAT
+    + took: number of students who took the SHSAT
+    + regPct: registered/enroll
+    + tookPct: took/enroll
+    + yield: took/registered
+    
+* Numeric values for psychosocial categories (0= NA, 1= Not Meeting Expectations, 2= Approaching Expectations, 3= Meeting Expectations, 4= Exceeeding Expectations))    
+    + quantCollab
+    + quantSupp
+    + quantRigor
+    + quantLeader
+    + quantCommunity
+    + quantTrust
+
+## What are its limitations i.e. what are some questions that you cannot answer with this data set?
+
+## What kind of cleaning and wrangling did you need to do?
+
+# Any preliminary exploration you've performed and your initial findings.
+
+# Based on these findings, what approach are you going to take? How has your approach changed from what you initially proposed, if applicable?

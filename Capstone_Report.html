@@ -131,9 +131,83 @@ $(document).ready(function () {
 
 <div id="background-and-problem-statement" class="section level2">
 <h2>Background and Problem Statement</h2>
-<p>PASSNYC is a not-for-profit organization that facilitates a collective impact that is dedicated to broadening educational opportunities for New York City’s talented and underserved students. New York City is home to some of the most impressive educational institutions in the world, yet in recent years, the City’s specialized high schools - institutions with historically transformative impact on student outcomes - have seen a shift toward more homogeneous student body demographics.</p>
+<p>PASSNYC – a not-for-profit organization that facilitates a collective impact– is dedicated to broadening educational opportunities for New York City’s talented and underserved students. New York City is home to some of the most impressive educational institutions in the world, yet in recent years, the City’s specialized high schools - institutions with historically transformative impact on student outcomes - have seen a shift toward more homogeneous student body demographics.</p>
 <p>PASSNYC uses public data to identify students within New York City’s under-performing school districts and, through consulting and collaboration with partners, aims to increase the diversity of students taking the Specialized High School Admissions Test (SHSAT). By focusing efforts in under-performing areas that are historically underrepresented in SHSAT registration, we will help pave the path to specialized high schools for a more diverse group of students.</p>
 <p>With limited time and resources, PASSNYC must be strategic in systemically improving the diversity pipeline and social mobility of certain disadvantaged groups into the specialized schools. The main question to be answered is where will PASSNYC’s investment produce the greatest ROI for the services they offer (after school programs, test preparation, mentoring, or resources for parents)?</p>
+</div>
+<div id="data-dictionary" class="section level2">
+<h2>Data Dictionary</h2>
+<ul>
+<li>school: school name<br />
+</li>
+<li>DBN: State Education Department Code<br />
+</li>
+<li>district<br />
+</li>
+<li>lat: lattitude coordinates of school<br />
+</li>
+<li>long: longitude coordinates of school<br />
+</li>
+<li>address: full address of school<br />
+</li>
+<li>City<br />
+</li>
+<li>zip<br />
+</li>
+<li>commSchool: Is the school a community school (Y/N)?</li>
+<li>eni income: (%temp housing) + (% HRA eligible x 0.5) + (% free lunch eligible x 0.5). The higher the index, the higher the need.</li>
+<li><p>pctELL: percent of English Language Learners</p></li>
+<li>Race Percentages: percent of school that identifies as a certain race.
+<ul>
+<li>pctAsian</li>
+<li>pctBlack</li>
+<li>pctHispanic</li>
+<li>pctBlackHispanic: percent of Black students + percent of Hispanic students</li>
+<li>pctWhite: White</li>
+</ul></li>
+<li>Attendance
+<ul>
+<li>pctAttend: total number of days attended by all students / total number of days on register for all students<br />
+</li>
+<li>pctAbsentChronic: percent of students missing 10% of school days - or 18 days+ per year in a 180-day school year</li>
+</ul></li>
+<li>Psychosocial Ratings
+<ul>
+<li>pctRigor: How well the curriculum and instruction engage students, build critical-thinking skills, and are aligned to the Common Core</li>
+<li>ratingRigor: How well the curriculum and instruction engage students, build critical-thinking skills, and are aligned to the Common Core</li>
+<li>pctCollab: How well teachers participate in opportunities to develop, grow, and contribute to the continuous improvement of the school community<br />
+</li>
+<li>ratingCollab: How well teachers participate in opportunities to develop, grow, and contribute to the continuous improvement of the school community</li>
+<li>pctSupp: How well the school establishes a culture where students feel safe, challenged to grow, and supported to meet high expectations</li>
+<li>ratingSupp: How well the school establishes a culture where students feel safe, challenged to grow, and supported to meet high expectations<br />
+</li>
+<li>pctLeader: How well school leadership inspires the school community with a clear instructional vision and effectively distributes leadership to realize this vision<br />
+</li>
+<li>ratingLeader: How well school leadership inspires the school community with a clear instructional vision and effectively distributes leadership to realize this vision<br />
+</li>
+<li>pctCommunity: How well the school forms effective partnerships with families to improve the school<br />
+</li>
+<li>ratingCommunity: How well the school forms effective partnerships with families to improve the school</li>
+<li>pctTrust: Whether the relationships between administrators, educators, students, and families are based on trust and respect</li>
+<li>ratingTrust: Whether the relationships between administrators, educators, students, and families are based on trust and respect</li>
+</ul></li>
+<li>Average School Scores for English (ELA) and Math sections
+<ul>
+<li>avgELA</li>
+<li>avgMath</li>
+</ul></li>
+<li>Students and test statistics for District 5/6
+<ul>
+<li>enroll: number of students enrolled in the school</li>
+<li>registered: number of students who registered for SHSAT</li>
+<li>took: number of students who took the SHSAT</li>
+<li>regPct: registered/enroll</li>
+<li>tookPct: took/enroll</li>
+<li>yield: took/registered</li>
+</ul></li>
+</ul>
+<p>*Numeric values for psychosocial categories (0= NA, 1= Not Meeting Expectations, 2= Approaching Expectations, 3= Meeting Expectations, 4= Exceeeding Expectations))<br />
++ quantCollab + quantSupp + quantRigor + quantLeader + quantCommunity + quantTrust</p>
 </div>
 <div id="data-cleaning" class="section level2">
 <h2>Data Cleaning</h2>
@@ -342,7 +416,8 @@ school&lt;-school%&gt;%
   select(-`Adjusted Grade`)%&gt;%
   select(-`New?`)%&gt;%
   select(-`Other Location Code in LCGMS`)%&gt;%
-  select(-`SED Code`)</code></pre>
+  select(-`SED Code`)%&gt;%
+  select(-starts_with('Grade'))</code></pre>
 <p>Now we’re going to join the two tables together. We will also need to clean this table a little bit as a result of reconciliation.</p>
 <pre class="r"><code>school_clean &lt;- full_join(school, reg, by = &quot;DBN&quot; )
 
