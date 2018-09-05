@@ -80,7 +80,6 @@ With limited time and resources, PASSNYC must be strategic in systemically impro
     + quantTrust
 
 
-
 ## Data Cleaning
 
 ### Loading Libraries and Data
@@ -88,17 +87,20 @@ Let's load some libraries we will use.
 ```{r}
 library(tidyverse)
 library(ggplot2)
+library(corrplot)
+library(reshape)
+source("http://www.sthda.com/upload/rquery_cormat.r")
 ```
 
 
 Let's load our data from the table:
-```{r echo=TRUE}
+```{r message=FALSE, warning=FALSE, include= T , paged.print= F}
 reg <- read_csv("D5 SHSAT Registrations and Testers.csv")
 school <- read_csv("2016 School Explorer.csv")
 ```
 
 Before we proceed, let's take a look at the initial data.
-```{r echo=FALSE}
+```{r message=FALSE, warning=FALSE, include= T , paged.print= F}
 head(reg)
 
 head(school)
@@ -111,7 +113,9 @@ In order to make our data analysis easier, let's start cleaning the data. Let's 
 ### Reg
 We begin by renaming the columns we plan to use.
 
-```{r echo=F}
+
+```{r include=FALSE}
+#Let's start by renaming the columns to make them easier for us and R to understand.
 reg<- reg %>%
   rename(school = `School name`,
          year = `Year of SHST`,
@@ -119,11 +123,8 @@ reg<- reg %>%
          enroll = `Enrollment on 10/31`,
          registered = `Number of students who registered for the SHSAT`,
          took = `Number of students who took the SHSAT`)
-```
 
-
-With this table there are multiple entries for the same school due to years or grades. Let's find the distinct number of schools, calculate a mean for the school and save it so we can easil join it with `school`.
-```{r}
+#Finding the average number of students at each school, how many registered, and how many took the test
 reg<- reg %>%
   group_by(school) %>%
   mutate_if(is.numeric, mean) %>%
@@ -145,11 +146,27 @@ reg<-reg%>%
   mutate(tookPct = took/enroll)%>%
   mutate(yield = took/registered)
 
-```
 
-Now let's do the same for `school`.
-```{r}
+#What does the table currently look like?
+head(reg)
+
+
+#Let's clean up the other sheet
+school<-read_csv("2016 School Explorer.csv")
+
+#what does the table look like?
+head (school)
+
+#remove unneccessary columns
+school<-school%>%
+  select(-`Adjusted Grade`)%>%
+  select(-`New?`)%>%
+  select(-`Other Location Code in LCGMS`)%>%
+  select(-`SED Code`)%>%
+  select(-starts_with('Grade'))
+
 #renaming some columns
+head(school)
 
 school<- school %>%
   rename(school = `School Name`,
@@ -184,31 +201,27 @@ school<- school %>%
          ratingTrust = `Trust Rating`,
          avgELA = `Average ELA Proficiency`,
          avgMath = `Average Math Proficiency`)
-
-
-#remove unneccessary columns
-school<-school%>%
-  select(-`Adjusted Grade`)%>%
-  select(-`New?`)%>%
-  select(-`Other Location Code in LCGMS`)%>%
-  select(-`SED Code`)%>%
-  select(-starts_with('Grade'))
-
          
-```         
 
-Now we're going to join the two tables together. We will also need to clean this table a little bit as a result of reconciliation.
-```{r}
+#now we want to join the tables together
 school_clean <- full_join(school, reg, by = "DBN" )
 
+#changing some columns to numeric values (as they should be)
+
+school_clean<- school_clean %>% 
+  mutate_at(vars(contains('pct')),funs(as.numeric(gsub("%", "", ., fixed = TRUE))/100)) %>%
+  mutate(income = as.numeric(gsub('\\$|,', '', income))) %>%
+  mutate(eni = as.numeric(eni))%>%
+  mutate(avgELA = as.numeric(avgELA),
+         avgMath = as.numeric(avgMath))
+
+#making some final touches on our new table
 school_clean <- school_clean%>%
   filter(!is.na(school.x))%>%
   select(-school.y)%>%
   rename(school = school.x)
-```
 
-Now there is one final step, we need to add quantitative scores for our ratings. To easily do that, let's create a nested if_else function, and apply it.
-```{r}
+#let's turn some qualitative ratings into quantitative scores. First, let's create a function to make creating these new columns easier.
 quantScore <- function(x){
   if_else(grepl("Not Meeting Target", x),1 ,
           if_else(grepl("Approaching Target", x),2 ,
@@ -224,11 +237,28 @@ school_clean<- school_clean%>%
   mutate(quantLeader = quantScore(ratingLeader)) %>%
   mutate(quantCommunity = quantScore(ratingCommunity)) %>%
   mutate(quantTrust = quantScore(ratingTrust))
-```
 
-Looks like our table is ready for analysis. Now let's save it as a brand new data sheet for anyone who wants to use it for future analysis, and of course, for our own analysis.
 
-`write_csv(school_clean, "SHSAT_data.csv")`
+write_csv(school_clean, "SHSAT_data.csv")
+
+
+str(school_clean)
+         
+```         
+
 
 ## Exploratory Data Analysis
+```{r echo=F}
+library(reshape)
+raceDistrict<- melt(school_clean)
+```
+
+
+```{r echo=FALSE}
+g <- ggplot(school_clean, aes( as.factor(district), eni))
+g + geom_violin() + 
+  labs(title="ENI of NY School Districts", 
+       x= "District",
+       y="Economic Need Index")
+```
 
