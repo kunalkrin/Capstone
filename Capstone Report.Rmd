@@ -249,8 +249,7 @@ str(school_clean)
 
 ## Exploratory Data Analysis
 ```{r echo=F}
-library(reshape)
-raceDistrict<- melt(school_clean)
+ggpairs(school_clean, columns = 11:17)
 ```
 
 

@@ -1,0 +1,48 @@
+---
+title: "EDA"
+author: "Kunal Kerai"
+date: "September 4, 2018"
+output: html_document
+---
+
+```{r}
+school <- read_csv("SHSAT_data.csv")
+
+#count something interesting
+summary(school)
+
+#find some trends: our qualitative ratings are heavily skewed positive and are in no way an indicator of how well a school performs.
+
+#some bar plots and histograms
+
+ggplot(school, aes(x= district, y = eni, col = as.factor(commSchool) ) ) +
+  geom_jitter() + 
+  facet_grid(. ~ commSchool)
+
+#Comm Schools have a higher ENI average by far.
+
+
+#Boxplot
+ggplot(school, aes(x = as.factor(district), y = eni)) + geom_boxplot() +stat_smooth()
+# Districts 7, 9, 10, 12, and 32 have the highest ENIs of any school districts.
+
+
+URM<-school%>%
+  group_by(district)%>%
+  summarise( summary = mean(pctBlackHispanic))%>%
+  arrange(desc(summary))
+
+URM
+
+ggplot(school, aes(y = eni, x = district, col = pctBlackHispanic)) + geom_jitter() +stat_smooth()
+#as suspected, districts with the highest ENIs also have the highest % of underrepresented minority (URM) students.
+
+
+#Related quantities and scatterplot
+cor(school$pctBlackHispanic, school$pctWhite)
+ggplot(school, aes(y = pctBlackHispanic, x = pctWhite)) + geom_jitter() + stat_smooth(method = "lm")
+
+
+#ENI and income are collinear, Race is a proxy factor for school performance and ENI. They will be important in determining school performance.
+
+```
