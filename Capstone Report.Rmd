@@ -243,8 +243,34 @@ write_csv(school_clean, "SHSAT_data.csv")
 
 
 str(school_clean)
+
+			
+numeric<- na.omit(school_clean)
+
+
+numeric%>%
+  select(eni, income, yield, enroll, regPct, tookPct, starts_with('pct'), starts_with('avg'), starts_with('quant'))%>%
+  cor() %>%
+  corrplot(type = "upper")  
+
+race<- lm(avgMath ~ eni, data = school_clean)
+summary(race)
+plot(race)
          
 ```         
+
+
+
+Before continuing, there are three things we need to consider when analyzing our data:
+
+* PassNYC cares about increasing diversity; therefore need to look at low income, and underrepresented racial minorities (URM) students
+* PassNYC wants to improve the situation through their offerings: after school programs, test preparation, mentoring, and resources for parents
+* Success will be measured by how many student register then take the test, as well as the academic performance of the school as an indicator.
+
+
+
+
+
 
 
 ## Exploratory Data Analysis
