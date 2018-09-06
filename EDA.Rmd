@@ -34,7 +34,7 @@ URM<-school%>%
 
 URM
 
-ggplot(school, aes(y = eni, x = district, col = pctBlackHispanic)) + geom_jitter() +stat_smooth()
+ggplot(school, aes(y = eni, x = district, col = pctHispanic)) + geom_jitter()
 #as suspected, districts with the highest ENIs also have the highest % of underrepresented minority (URM) students.
 
 

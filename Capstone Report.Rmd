@@ -88,7 +88,6 @@ Let's load some libraries we will use.
 library(tidyverse)
 library(ggplot2)
 library(corrplot)
-library(reshape)
 source("http://www.sthda.com/upload/rquery_cormat.r")
 ```
 
@@ -115,7 +114,7 @@ We begin by renaming the columns we plan to use.
 
 
 ```{r include=FALSE}
-#Let's start by renaming the columns to make them easier for us and R to understand.
+
 reg<- reg %>%
   rename(school = `School name`,
          year = `Year of SHST`,
@@ -244,18 +243,6 @@ write_csv(school_clean, "SHSAT_data.csv")
 
 str(school_clean)
 
-			
-numeric<- na.omit(school_clean)
-
-
-numeric%>%
-  select(eni, income, yield, enroll, regPct, tookPct, starts_with('pct'), starts_with('avg'), starts_with('quant'))%>%
-  cor() %>%
-  corrplot(type = "upper")  
-
-race<- lm(avgMath ~ eni, data = school_clean)
-summary(race)
-plot(race)
          
 ```         
 
@@ -267,23 +254,101 @@ Before continuing, there are three things we need to consider when analyzing our
 * PassNYC wants to improve the situation through their offerings: after school programs, test preparation, mentoring, and resources for parents
 * Success will be measured by how many student register then take the test, as well as the academic performance of the school as an indicator.
 
-
+We consider a school to be economically stratified if its economic need as measured by the Economic
+Need Index1 is more than 10 percentage points from the citywide average. A school can be stratified in either direction - by serving more low-income or more high-income children. 70.6% of schools are economically stratified today. 
 
 
 
 
 
 ## Exploratory Data Analysis
-```{r echo=F}
-ggpairs(school_clean, columns = 11:17)
+```{r echo=F, message=FALSE, warning=FALSE, paged.print=TRUE}
+ggplot(school_clean, aes(pctBlack)) +
+  geom_histogram(bins = 10) + 
+  labs(title="Percentage of Black Students", 
+       x= "Percent",
+       y="Count")
+
+ggplot(school_clean, aes(pctAsian)) +
+  geom_histogram(bins = 10) + 
+  labs(title="Percentage of Asian Students", 
+       x= "Percent",
+       y="Count")
+
+ggplot(school_clean, aes(pctHispanic)) +
+  geom_histogram(bins = 10) + 
+  labs(title="Percentage of Hispanic Students", 
+       x= "Percent",
+       y="Count")
+
+ggplot(school_clean, aes(pctWhite)) +
+  geom_histogram(bins = 10) + 
+  labs(title="Percentage of White Students", 
+       x= "Percent",
+       y="Count")
+
+#We can use avgMath because it is multicollinear with avgELA.
+
+ggplot(school_clean, aes(eni, avgMath)) +
+  geom_point() + 
+  stat_smooth(method = "lm") +
+  labs(title="As ENI increases, scores decrease.", 
+       x= "ENI",
+       y="Average Math Scores")
 ```
 
+Based on the information below, we can see the overall distributions of each race within the NYC school districts.
 
-```{r echo=FALSE}
-g <- ggplot(school_clean, aes( as.factor(district), eni))
-g + geom_violin() + 
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+ggplot(school_clean, aes( as.factor(district), eni)) + 
+  geom_violin() + 
   labs(title="ENI of NY School Districts", 
        x= "District",
        y="Economic Need Index")
+
+
+```
+
+## Examining our Hi-Potential diverse schools
+```{r}
+ggplot(school_clean, aes(pctHispanic, avgMath)) +
+  geom_point(col = ifelse(school_clean$avgMath > 3.0 & school_clean$pctHispanic>.50, "red", "black"))
+
+
+Hispanic <- school_clean%>%
+  filter(avgMath >=3.0)%>%
+  filter(pctHispanic>=.5)
+Hispanic
+
+ggplot(school_clean, aes(pctBlack, avgMath)) +
+  geom_point(col = ifelse(school_clean$avgMath > 3.0 & school_clean$pctBlack>.50, "red", "black"))
+
+
+Black <- school_clean%>%
+  filter(avgMath >=3.0)%>%
+  filter(pctBlack>=.5)
+
+hipo <- bind_rows(Hispanic, Black)
+
+hipo
+
+```
+
+## Correlation Matrices
+```{r}
+numeric<- na.omit(school_clean)
+
+numeric%>%
+  select(eni, income, yield, enroll, regPct, tookPct, starts_with('pct'), starts_with('avg'), starts_with('quant'))%>%
+  cor() %>%
+  corrplot(type = "upper", method = "square")  
+
+hipo<-na.omit(hipo)
+
+hipo%>%
+  select(eni, income, yield, enroll, regPct, tookPct, starts_with('pct'), starts_with('avg'), starts_with('quant'))%>%
+  cor() %>%
+  corrplot(type = "upper", method = "square")
+
 ```
 
