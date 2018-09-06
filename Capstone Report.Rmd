@@ -310,10 +310,9 @@ ggplot(school_clean, aes( as.factor(district), eni)) +
 ```
 
 ## Examining our Hi-Potential diverse schools
-```{r}
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
 ggplot(school_clean, aes(pctHispanic, avgMath)) +
   geom_point(col = ifelse(school_clean$avgMath > 3.0 & school_clean$pctHispanic>.50, "red", "black"))
-
 
 Hispanic <- school_clean%>%
   filter(avgMath >=3.0)%>%
@@ -328,13 +327,28 @@ Black <- school_clean%>%
   filter(avgMath >=3.0)%>%
   filter(pctBlack>=.5)
 
+
 hipo <- bind_rows(Hispanic, Black)
+hipo
+
+ggplot(hipo, aes(x = as.factor(district), y= avgMath)) +
+  geom_violin() +
+   labs(title="What Districts have the highest diversity and average scores?", 
+       x= "District",
+       y="Average Math Scores")
+
+ggplot(hipo, aes(district)) +
+  geom_bar(stat = "bin")
+
+ggplot(hipo, aes(pctBlackHispanic, avgMath)) + geom_point() +stat_smooth(method = "lm")
 
 hipo
 
 ```
+When examining the hi-po population, we can see that Districts 4,5,7,8,9,11,23,24, and 27 have hi-po students.
 
-## Correlation Matrices
+
+## Correlation Matrix
 ```{r}
 numeric<- na.omit(school_clean)
 
@@ -342,13 +356,6 @@ numeric%>%
   select(eni, income, yield, enroll, regPct, tookPct, starts_with('pct'), starts_with('avg'), starts_with('quant'))%>%
   cor() %>%
   corrplot(type = "upper", method = "square")  
-
-hipo<-na.omit(hipo)
-
-hipo%>%
-  select(eni, income, yield, enroll, regPct, tookPct, starts_with('pct'), starts_with('avg'), starts_with('quant'))%>%
-  cor() %>%
-  corrplot(type = "upper", method = "square")
 
 ```
 
