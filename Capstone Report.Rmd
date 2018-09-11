@@ -199,7 +199,7 @@ school<- school %>%
          mathAsian = `Grade 8 Math 4s - Asian or Pacific Islander`,
          mathWhite = `Grade 8 Math 4s - White`,
          elaAll = `Grade 8 ELA - All Students Tested`,
-         ellAll4 = `Grade 8 ELA 4s - All Students`,
+         elaAll4 = `Grade 8 ELA 4s - All Students`,
          elaBlack = `Grade 8 ELA 4s - Black or African American`,
          elaHispanic = `Grade 8 ELA 4s - Hispanic or Latino`,
          elaAsian = `Grade 8 ELA 4s - Asian or Pacific Islander`,
@@ -252,6 +252,19 @@ school_clean<- school_clean%>%
   mutate(quantTrust = quantScore(ratingTrust))
 
 
+school_clean <- school_clean%>%
+  mutate(pctELA4 = elaAll4 / elaAll,
+          pctELABlack = elaBlack / elaAll,
+          pctELAHispanic = elaHispanic / elaAll,
+          pctELAAsian = elaAsian / elaAll,
+          pctELAWhite = elaWhite/ elaAll,
+          pctMath4 = mathAll4 / mathAll,
+          pctMathBlack = mathBlack / mathAll,
+          pctMathHispanic = mathHispanic / mathAll,
+          pctMathAsian = mathAsian / mathAll,
+          pctMathWhite = mathWhite / mathAll)
+          
+
 write_csv(school_clean, "SHSAT_data.csv")
 
 
@@ -277,6 +290,12 @@ Need Index1 is more than 10 percentage points from the citywide average. A schoo
 
 ## Exploratory Data Analysis
 ```{r echo=F, message=FALSE, warning=FALSE, paged.print=TRUE}
+
+
+race<-gather(school_clean, race, percent, pctAsian:pctWhite, factor_key=TRUE)
+
+head(race)
+
 ggplot(school_clean, aes(pctBlack)) +
   geom_histogram(bins = 10) + 
   labs(title="Percentage of Black Students", 
