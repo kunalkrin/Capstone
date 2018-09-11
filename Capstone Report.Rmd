@@ -130,7 +130,7 @@ reg<- reg %>%
   mutate_if(is.character, funs(paste(unique(.), collapse = "_"))) %>%
   distinct()
 
-
+#Changing the case will let us match and eventually join the tables.
 reg$school<-toupper(reg$school)
 
 #Let's remove some columns that have no use for our future analysis.
@@ -155,14 +155,6 @@ school<-read_csv("2016 School Explorer.csv")
 
 #what does the table look like?
 head (school)
-
-#remove unneccessary columns
-school<-school%>%
-  select(-`Adjusted Grade`)%>%
-  select(-`New?`)%>%
-  select(-`Other Location Code in LCGMS`)%>%
-  select(-`SED Code`)%>%
-  select(-starts_with('Grade'))
 
 #renaming some columns
 head(school)
@@ -199,8 +191,28 @@ school<- school %>%
          pctTrust = `Trust %`,
          ratingTrust = `Trust Rating`,
          avgELA = `Average ELA Proficiency`,
-         avgMath = `Average Math Proficiency`)
-         
+         avgMath = `Average Math Proficiency`,
+         mathAll = `Grade 8 Math - All Students Tested`,
+         mathAll4 = `Grade 8 Math 4s - All Students`,
+         mathBlack = `Grade 8 Math 4s - Black or African American`,
+         mathHispanic = `Grade 8 Math 4s - Hispanic or Latino`,
+         mathAsian = `Grade 8 Math 4s - Asian or Pacific Islander`,
+         mathWhite = `Grade 8 Math 4s - White`,
+         elaAll = `Grade 8 ELA - All Students Tested`,
+         ellAll4 = `Grade 8 ELA 4s - All Students`,
+         elaBlack = `Grade 8 ELA 4s - Black or African American`,
+         elaHispanic = `Grade 8 ELA 4s - Hispanic or Latino`,
+         elaAsian = `Grade 8 ELA 4s - Asian or Pacific Islander`,
+         elaWhite = `Grade 8 ELA 4s - White` )
+
+ 
+#remove unneccessary columns
+school<-school%>%
+  select(-`Adjusted Grade`)%>%
+  select(-`New?`)%>%
+  select(-`Other Location Code in LCGMS`)%>%
+  select(-`SED Code`)%>%
+  select(-starts_with('Grade'))        
 
 #now we want to join the tables together
 school_clean <- full_join(school, reg, by = "DBN" )
@@ -213,6 +225,8 @@ school_clean<- school_clean %>%
   mutate(eni = as.numeric(eni))%>%
   mutate(avgELA = as.numeric(avgELA),
          avgMath = as.numeric(avgMath))
+
+
 
 #making some final touches on our new table
 school_clean <- school_clean%>%
