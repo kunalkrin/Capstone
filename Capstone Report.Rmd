@@ -302,6 +302,10 @@ ggplot(race, aes(x = percent, fill = race)) +
   facet_grid(race ~ .) +
   labs(title="Distributions of Students by Race")
 
+eniMap <- get_map(location = "New York City", zoom= 11, maptype = "terrain", source="google")
+ggmap(eniMap) + stat_summary_2d(geom = "tile",bins = 35, data=race, aes(x = long, y = lat, z = eni), alpha=0.5) +
+scale_fill_gradient(low = "green", high = "red", guide = guide_legend(title = "ENI")) +xlab("") + ylab("")
+
 
 
 #We can use avgMath because it is multicollinear with avgELA.
