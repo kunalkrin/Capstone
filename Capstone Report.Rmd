@@ -224,7 +224,8 @@ school_clean<- school_clean %>%
   mutate(income = as.numeric(gsub('\\$|,', '', income))) %>%
   mutate(eni = as.numeric(eni))%>%
   mutate(avgELA = as.numeric(avgELA),
-         avgMath = as.numeric(avgMath))
+         avgMath = as.numeric(avgMath),
+         academicScore = avgMath + avgELA)
 
 
 
@@ -296,26 +297,37 @@ race<-gather(school_clean, race, percent, pctAsian:pctWhite, factor_key=TRUE)
 
 head(race)
 
-
+#Racial Demographic Distribution
 ggplot(race, aes(x = percent, fill = race)) +
   geom_density() +
   facet_grid(race ~ .) +
   labs(title="Distributions of Students by Race")
 
+#Heatmap of ENI
 eniMap <- get_map(location = "New York City", zoom= 11, maptype = "terrain", source="google")
-ggmap(eniMap) + stat_summary_2d(geom = "tile",bins = 35, data=race, aes(x = long, y = lat, z = eni), alpha=0.5) +
-scale_fill_gradient(low = "green", high = "red", guide = guide_legend(title = "ENI")) +xlab("") + ylab("")
+ggmap(eniMap) +
+  stat_summary_2d(geom = "tile",bins = 35, data=race, aes(x = long, y = lat, z = eni), alpha=0.5) +
+  scale_fill_gradient(low = "green", high = "red", guide = guide_legend(title = "ENI")) +
+  xlab("") + ylab("")
+
+#Heatmap of Race
+raceMap <- get_map(location = "New York City", zoom= 11, maptype = "terrain", source="google")
+ggmap(raceMap) +
+  stat_summary_2d(geom = "tile",bins = 50, data=race, aes(x = long, y = lat, z = percent), alpha=0.5) +
+  scale_fill_gradient(low = "green", high = "red", guide = guide_legend(title = "Density")) +
+  xlab("") + ylab("") +
+  facet_wrap(~ race)
 
 
 
 #We can use avgMath because it is multicollinear with avgELA.
 
-ggplot(school_clean, aes(eni, avgMath)) +
+ggplot(school_clean, aes(eni, academicScore)) +
   geom_point() + 
   stat_smooth(method = "lm") +
   labs(title="As ENI increases, scores decrease.", 
        x= "ENI",
-       y="Average Math Scores")
+       y="Aggregate ELA and Math Scores")
 ```
 
 Based on the information below, we can see the overall distributions of each race within the NYC school districts.
