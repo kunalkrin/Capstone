@@ -147,14 +147,14 @@ reg<-reg%>%
 
 
 #What does the table currently look like?
-head(reg)
+str(reg)
 
 
 #Let's clean up the other sheet
 school<-read_csv("2016 School Explorer.csv")
 
 #what does the table look like?
-head (school)
+str(school)
 
 #renaming some columns
 head(school)
@@ -282,7 +282,7 @@ Before continuing, there are three things we need to consider when analyzing our
 * Success will be measured by how many student register then take the test, as well as the academic performance of the school as an indicator.
 
 We consider a school to be economically stratified if its economic need as measured by the Economic
-Need Index1 is more than 10 percentage points from the citywide average. A school can be stratified in either direction - by serving more low-income or more high-income children. 70.6% of schools are economically stratified today. 
+Need Index1 is more than 10 percentage points from the citywide average. A school can be stratified in either direction - by serving more low-income or more high-income children. New York City reports that 70.6% of schools are economically stratified today. 
 
 
 
@@ -296,29 +296,13 @@ race<-gather(school_clean, race, percent, pctAsian:pctWhite, factor_key=TRUE)
 
 head(race)
 
-ggplot(school_clean, aes(pctBlack)) +
-  geom_histogram(bins = 10) + 
-  labs(title="Percentage of Black Students", 
-       x= "Percent",
-       y="Count")
 
-ggplot(school_clean, aes(pctAsian)) +
-  geom_histogram(bins = 10) + 
-  labs(title="Percentage of Asian Students", 
-       x= "Percent",
-       y="Count")
+ggplot(race, aes(x = percent, fill = race)) +
+  geom_density() +
+  facet_grid(race ~ .) +
+  labs(title="Distributions of Students by Race")
 
-ggplot(school_clean, aes(pctHispanic)) +
-  geom_histogram(bins = 10) + 
-  labs(title="Percentage of Hispanic Students", 
-       x= "Percent",
-       y="Count")
 
-ggplot(school_clean, aes(pctWhite)) +
-  geom_histogram(bins = 10) + 
-  labs(title="Percentage of White Students", 
-       x= "Percent",
-       y="Count")
 
 #We can use avgMath because it is multicollinear with avgELA.
 
