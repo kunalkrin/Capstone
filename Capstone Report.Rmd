@@ -333,11 +333,16 @@ ggplot(school_clean, aes(eni, academicScore)) +
 Based on the information below, we can see the overall distributions of each race within the NYC school districts.
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
-ggplot(school_clean, aes( as.factor(district), eni)) + 
-  geom_violin() + 
-  labs(title="ENI of NY School Districts", 
+
+
+toBeRemoved<-which(race$race=="pctBlackHispanic")
+raceWithoutURM <-race[-toBeRemoved,]
+
+ggplot(raceWithoutURM, aes( x = as.factor(district), fill = race)) + 
+  geom_bar() + 
+  labs(title="Racial Breakdown per District", 
        x= "District",
-       y="Economic Need Index")
+       y = "Number of Students")
 
 
 ```
