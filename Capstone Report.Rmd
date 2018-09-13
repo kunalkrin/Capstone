@@ -62,6 +62,7 @@ With limited time and resources, PASSNYC must be strategic in systemically impro
 * Average School Scores for English (ELA) and Math sections
     + avgELA
     + avgMath
+    + academicScore (sum of ELA and Math)
 
 * Students and test statistics for District 5/6
     + enroll: number of students enrolled in the school
@@ -78,6 +79,12 @@ With limited time and resources, PASSNYC must be strategic in systemically impro
     + quantLeader
     + quantCommunity
     + quantTrust
+    
+* Number of URM students who received the highest score possible for the English and Math sections by race:
+    + elaBlack
+    + elaHispanic
+    + mathBlack
+    + mathHispanic
 
 
 ## Data Cleaning
@@ -291,8 +298,6 @@ Need Index1 is more than 10 percentage points from the citywide average. A schoo
 
 ## Exploratory Data Analysis
 ```{r echo=F, message=FALSE, warning=FALSE, paged.print=TRUE}
-
-
 race<-gather(school_clean, race, percent, pctAsian:pctWhite, factor_key=TRUE)
 
 head(race)
@@ -302,26 +307,38 @@ ggplot(race, aes(x = percent, fill = race)) +
   geom_density() +
   facet_grid(race ~ .) +
   labs(title="Distributions of Students by Race")
+```
 
-#Heatmap of ENI
-eniMap <- get_map(location = "New York City", zoom= 11, maptype = "terrain", source="google")
-ggmap(eniMap) +
-  stat_summary_2d(geom = "tile",bins = 35, data=race, aes(x = long, y = lat, z = eni), alpha=0.5) +
-  scale_fill_gradient(low = "green", high = "red", guide = guide_legend(title = "ENI")) +
-  xlab("") + ylab("")
+Most NY schools have a low White and Asian population, but a high URM population. Now where are they located?
 
+```{r echo=F, message=FALSE, warning=FALSE, paged.print=TRUE}
 #Heatmap of Race
 raceMap <- get_map(location = "New York City", zoom= 11, maptype = "terrain", source="google")
 ggmap(raceMap) +
   stat_summary_2d(geom = "tile",bins = 50, data=race, aes(x = long, y = lat, z = percent), alpha=0.5) +
   scale_fill_gradient(low = "green", high = "red", guide = guide_legend(title = "Density")) +
-  xlab("") + ylab("") +
+  labs(x = "", y= "") +
   facet_wrap(~ race)
+```
+From the looks of our graphs, schools are racially stratified within NYC. Asian and White students are relatively spread out, but it is clear that they are in more affluent areas of the city (e.g. Manhattan, Staten Island). Interestingly, URMs are racially stratified in where they attend school, with Hispanics mostly in the northern parts of the Bronx, Brooklyn and Queens while Black students are in the heart of Brooklyn and some in Harlem. Now, when we combine our URMs, we can see three clear clusters of where they primarily attend school: the Bronx, Brooklyn-Queens, and a new cluster we did not see before, West New Brighton.
+
+From this exploratory plot, we're seeing that race and income interact with each other in the form of stratification, so let's take further look at the ENI of NYC:
+
+```{r echo=F, message=FALSE, warning=FALSE, paged.print=TRUE}
+#Heatmap of ENI
+eniMap <- get_map(location = "New York City", zoom= 11, maptype = "terrain", source="google")
+ggmap(eniMap) +
+  stat_summary_2d(geom = "tile",bins = 50, data=race, aes(x = long, y = lat, z = eni), alpha=0.5) +
+  scale_fill_gradient(low = "green", high = "red", guide = guide_legend(title = "ENI")) +
+  labs(x = "", y= "")
+```
+
+
 
 
 
 #We can use avgMath because it is multicollinear with avgELA.
-
+```{r echo=F, message=FALSE, warning=FALSE, paged.print=TRUE}
 ggplot(school_clean, aes(eni, academicScore)) +
   geom_point() + 
   stat_smooth(method = "lm") +
