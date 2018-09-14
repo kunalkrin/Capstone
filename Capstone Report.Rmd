@@ -270,7 +270,8 @@ school_clean <- school_clean%>%
           pctMathBlack = mathBlack / mathAll4,
           pctMathHispanic = mathHispanic / mathAll4,
           pctMathAsian = mathAsian / mathAll4,
-          pctMathWhite = mathWhite / mathAll4)
+          pctMathWhite = mathWhite / mathAll4,
+          URM4 = mathHispanic + mathBlack + elaHispanic + elaBlack)
           
 
 write_csv(school_clean, "SHSAT_data.csv")
@@ -333,11 +334,21 @@ ggmap(eniMap) +
   labs(x = "", y= "")
 ```
 
+As suspected, our schools with a high URM have a high ENI. Let's further explore:
 
+```{r echo=F, message=FALSE, warning=FALSE, paged.print=TRUE}
+ggplot(race, aes(x = eni, y = percent, col = race)) +
+  geom_point() +
+  facet_wrap(.~race)
 
+raceENI <- lm(eni~pctBlackHispanic, data = school_clean)
+summary(raceENI)
+```
+As we can see, there is a strong correlation between URM and ENI, and White students and ENI. Whereas the former is positively correlated, the latter is negatively correlated. This, in addition to the .6 correlation beweetn URM and ENI, tells us that we can predict which schools will have a higher economic need if they have a higher URM population.
 
 
 #We can use avgMath because it is multicollinear with avgELA.
+
 ```{r echo=F, message=FALSE, warning=FALSE, paged.print=TRUE}
 ggplot(school_clean, aes(eni, academicScore)) +
   geom_point() + 
@@ -345,6 +356,9 @@ ggplot(school_clean, aes(eni, academicScore)) +
   labs(title="As ENI increases, scores decrease.", 
        x= "ENI",
        y="Aggregate ELA and Math Scores")
+scoreENI <- lm(academicScore ~ eni + pctBlackHispanic, data = school_clean)
+summary(scoreENI)
+plot(scoreENI)
 ```
 
 Based on the information below, we can see the overall distributions of each race within the NYC school districts.
@@ -368,7 +382,7 @@ ggplot(raceWithoutURM, aes( x = as.factor(district), fill = race)) +
 ```{r}
 score<-gather(school_clean, race, count, c(elaBlack, elaHispanic ), factor_key=TRUE)
 score<-score%>%
-  filter(!is.na(count) & count>0)
+  filter(!is.na(count) & count>0)%>%
 
 score
 
@@ -388,8 +402,8 @@ ggplot(score, aes(x = percent, fill = race)) +
 
 eniMap <- get_map(location = "New York City", zoom= 11, maptype = "terrain", source="google")
 ggmap(eniMap) +
-  stat_summary_2d(geom = "tile",bins = 35, data=score, aes(x = long, y = lat, z = count), alpha=0.5) +
-  scale_fill_gradient(low = "yellow", high = "green", guide = guide_legend(title = "Density of 4 Scores")) +
+  stat_summary_2d(geom = "tile",bins = 20, data=score, aes(x = long, y = lat, z = count), alpha=0.5) +
+  scale_fill_gradient(low = "black", high = "green", guide = guide_legend(title = "Density of 4 Scores")) +
   xlab("") + ylab("")
 
 
