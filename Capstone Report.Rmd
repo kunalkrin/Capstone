@@ -287,6 +287,8 @@ str(school_clean)
          
 ```         
 
+Before moving into our EDA, Hispanic is considered a race by NYC. Student who identify as multiple races are places 
+
 ## Exploratory Data Analysis
 
 Before continuing, there are three things we need to consider when analyzing our data:
@@ -393,7 +395,7 @@ score <- score %>%
 
 score$countScale<- scale(score$count)
 
-school_2.5<- score %>%
+school_16<- score %>%
   group_by(school)%>%
   filter(countScale>1)%>%
   summarise(count = sum(count))
@@ -412,9 +414,9 @@ summary(school_clean)
 One way of understanding performance is examining the number of URM students receiving 4s for their exams, but not just any schools, why not target the highest schools? We target schools who fall 1 standard deviation above the mean (top 2.5% of schools) to produce a list of schools we can specifically target with NYCPASS's programs to further bolster their numbers:
 
 ```{r}
-school_2.5 <- school_2.5 %>%
+school_16 <- school_16 %>%
   arrange(desc(count))
-school_2.5
+school_16
 ```
 ### Recommendation 1
 Just as recruiters for companies have "target schools" from which they heavily recruit their college graduate workforce, NYCPASS can have target schools where they would want to implement/pilot their programs, and focus their financial and human resources. The schools above represent the the top 2.5% schools with URMs that receive 4s (the highest score) on the SHSAT.
@@ -454,6 +456,7 @@ ggplot(hipo, aes(as.factor(City), fill = City)) +
        x= "City",
        y="Academic Score")
 ```
+
 ### Recommendation 2: Geolocation Strategy
 Based on the information above, we can see there is a clear corridor of high scores in high need, URM schools. PASSNYC can concentrate marketing and outreach efforts to this area to begin raising awareness for their solutions so to gain the buy-in from parents, teachers, and administrators. In addition, based on the table above, should NYCPASS see a demographic underrrepresented in SHSAT numbers in the future, they can also refer to the `hipo` to identify schools with top performing Black students, or top performing Hispanic students.
 
