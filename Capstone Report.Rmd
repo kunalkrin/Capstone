@@ -3,8 +3,9 @@ title: "Social Equity, Access and the New York School System"
 author: "Kunal Kerai"
 date: "August 29, 2018"
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
+  word_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -92,9 +93,10 @@ With limited time and resources, PASSNYC must be strategic in systemically impro
 
 ### Loading Libraries and Data
 Let's load some libraries we will use.
-```{r}
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
 library(tidyverse)
 library(ggplot2)
+library(digest)
 library(corrplot)
 library(ggmap)
 library(GGally)
@@ -117,9 +119,9 @@ head(school)
 
 Our data looks pretty clean by most standards, but there is work to be done for sure. For example, we'll need to rename some of our variable names, join our two tables, etc. Let's move forward with some cleaning.
  
-In order to make our data analysis easier, let's start cleaning the data. Let's begin by focusing on `reg`.
+In order to make our data analysis easier, let's start cleaning the data.
 
-### Reg
+### Cleaning our Data
 We begin by renaming the columns we plan to use.
 
 
@@ -285,7 +287,7 @@ str(school_clean)
          
 ```         
 
-
+## Exploratory Data Analysis
 
 Before continuing, there are three things we need to consider when analyzing our data:
 
@@ -298,9 +300,6 @@ Need Index1 is more than 10 percentage points from the citywide average. A schoo
 
 
 
-
-
-## Exploratory Data Analysis
 
 ### Demographics
 ```{r echo=F, message=FALSE, warning=FALSE, paged.print=TRUE}
@@ -334,12 +333,11 @@ From our Districts, we can see that most of our students come from Districts 9, 
 
 ```{r echo=F, message=FALSE, warning=FALSE, paged.print=TRUE}
 #Heatmap of Race
-raceMap <- get_map(location = "New York City", zoom= 11, maptype = "terrain", source="google")
-ggmap(raceMap) +
-  stat_summary_2d(geom = "tile",bins = 50, data=race, aes(x = long, y = lat, z = percent), alpha=0.5) +
+map <- get_map(location = "New York City", zoom= 11, maptype = "terrain", source="google")
+ggmap(map) +
+  stat_summary_2d(geom = "tile",bins = 50, data= race, aes(x = long, y = lat, z = percent), alpha=0.5) +
   scale_fill_gradient(low = "green", high = "red", guide = guide_legend(title = "Density")) +
-  labs(x = "", y= "") +
-  facet_wrap(~ race)
+  labs(x = "", y= "")
 ```
 From the looks of our graphs, schools are racially stratified within NYC. Asian and White students are relatively spread out, but it is clear that they are in more affluent areas of the city (e.g. Manhattan, Staten Island). Interestingly, URMs are racially stratified in where they attend school, with Hispanics mostly in the northern parts of the Bronx, Brooklyn and Queens while Black students are in the heart of Brooklyn and some in Harlem. Now, when we combine our URMs, we can see three clear clusters of where they primarily attend school: the Bronx, Brooklyn-Queens, and a new cluster we did not see before, West New Brighton.
 
@@ -347,9 +345,8 @@ From this exploratory plot, we're seeing that race and income interact with each
 
 ```{r echo=F, message=FALSE, warning=FALSE, paged.print=TRUE}
 #Heatmap of ENI
-eniMap <- get_map(location = "New York City", zoom= 11, maptype = "terrain", source="google")
-ggmap(eniMap) +
-  stat_summary_2d(geom = "tile",bins = 30, data=race, aes(x = long, y = lat, z = eni), alpha=0.5) +
+ggmap(map) +
+  stat_summary_2d(geom = "tile",bins = 15, data=race, aes(x = long, y = lat, z = eni), alpha=0.5) +
   scale_fill_gradient(low = "green", high = "red", guide = guide_legend(title = "ENI")) +
   labs(x = "", y= "")
 ```
@@ -378,9 +375,9 @@ ggplot(school_clean, aes(eni, academicScore)) +
   labs(title="The more in need the school, the lower the average scores.", 
        x= "ENI",
        y="Aggregate ELA and Math Scores")
-scoreENI <- lm(academicScore ~ eni + pctBlackHispanic, data = school_clean)
-summary(scoreENI)
-plot(scoreENI)
+scoreENImodel <- lm(academicScore ~ eni + pctBlackHispanic, data = school_clean)
+summary(scoreENImodel)
+plot(scoreENImodel)
 ```
 
 Economic need is a strong predictor of how well a school will do and it makes sense-- the higher the need students have, the lower the scores will be due to resource insecurity. As we've found out from before, ENI and race have a relatively strong correlation, but there must be schools that despite their high ENI, produce a high number of 4s.
@@ -403,33 +400,35 @@ school_2.5<- score %>%
 
 
 #Racial Demographic Distribution
-ggplot(score, aes(x = count, fill = race)) +
-  geom_bar() +
-  facet_wrap(race ~ .) +
+ggplot(score, aes(y = count, x = eni, col = race)) +
+  geom_point() +
+  facet_grid(. ~ race) +
   labs(title="Distributions of Highest Scores by Students and Race")
 
+summary(school_clean)
 ```
+
+
 One way of understanding performance is examining the number of URM students receiving 4s for their exams, but not just any schools, why not target the highest schools? We target schools who fall 1 standard deviation above the mean (top 2.5% of schools) to produce a list of schools we can specifically target with NYCPASS's programs to further bolster their numbers:
 
 ```{r}
 school_2.5 <- school_2.5 %>%
   arrange(desc(count))
+school_2.5
 ```
+### Recommendation 1
+Just as recruiters for companies have "target schools" from which they heavily recruit their college graduate workforce, NYCPASS can have target schools where they would want to implement/pilot their programs, and focus their financial and human resources. The schools above represent the the top 2.5% schools with URMs that receive 4s (the highest score) on the SHSAT.
 
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
-eniMap <- get_map(location = "New York City", zoom= 11, maptype = "terrain", source="google")
-ggmap(eniMap) +
-  stat_summary_2d(geom = "tile",bins = 10, data=score, aes(x = long, y = lat, z = count), alpha=0.6) +
+ggmap(map) +
+  stat_summary_2d (geom = "tile", bins = 10, data = score, aes(x = long, y = lat, z = count), alpha = 0.6) +
   scale_fill_gradient(low = "black", high = "green", guide = guide_legend(title = "Density of 4 Scores")) +
   labs( x="",
         y ="")
-```
-### Recommendation 1: Geolocation Strategy
-Based on the information above, we can see there is a clear corridor of high scores in high need, URM schools. PASSNYC can concentrate marketing and outreach efforts to this area to begin raising awareness for their solutions so to gain the buy-in from parents, teachers, and administrators.
-
-## Examining our Hi-Potential diverse schools
-```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+ggplot(score, aes(x=reorder(City,count, length))) +
+  geom_bar(fill = "orange") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
 ggplot(school_clean, aes(pctHispanic, avgMath)) +
   geom_point(col = ifelse(school_clean$avgMath > 3.0 & school_clean$pctHispanic>.50, "red", "black"))
 
@@ -447,29 +446,32 @@ Black <- school_clean%>%
 hipo <- bind_rows(Hispanic, Black)
 hipo
 
-ggplot(hipo, aes(as.factor(district))) +
+ggplot(hipo, aes(as.factor(City), fill = City)) +
   geom_bar(stat = "count") +
-   labs(title="What Districts have the highest diversity and average scores?", 
-       x= "District",
-       y="Average Math Scores")
-
-ggplot(hipo, aes(district)) +
-  geom_bar(stat = "bin")
-
-
-
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  guides(fill=F) +
+   labs(title="What Areas have the highest diversity and average scores?", 
+       x= "City",
+       y="Academic Score")
 ```
-When examining the hi-po population, we can see that Districts 4,5,7,8,9,11,23,24, and 27 have hi-po students.
+### Recommendation 2: Geolocation Strategy
+Based on the information above, we can see there is a clear corridor of high scores in high need, URM schools. PASSNYC can concentrate marketing and outreach efforts to this area to begin raising awareness for their solutions so to gain the buy-in from parents, teachers, and administrators. In addition, based on the table above, should NYCPASS see a demographic underrrepresented in SHSAT numbers in the future, they can also refer to the `hipo` to identify schools with top performing Black students, or top performing Hispanic students.
 
 
 ## Correlation Matrix
 ```{r}
 numeric<- na.omit(school_clean)
 
-numeric%>%
-  select(eni, income, yield, enroll, regPct, tookPct, starts_with('pct'), starts_with('avg'), starts_with('quant'))%>%
-  cor() %>%
-  corrplot(type = "upper", method = "square")  
+numeric
+
+school_clean%>%
+  select(eni, income, URM4, contains("pct"), contains('Black'), starts_with('avg'), starts_with('quant'))%>%
+  cor(use = "pairwise.complete.obs") %>%
+  corrplot(type = "upper", method = "square") 
+
+
+scoreENImodel <- lm(academicScore ~ pctBlackHispanic + eni + p, data = school_clean)
+summary(scoreENImodel)
 
 ```
 
