@@ -104,7 +104,7 @@ library(DT)
 library(GGally)
 library(caret)
 library(cluster)
-library(randomorest)
+library(randomForest)
 library(mlbench)
 ```
 
@@ -158,10 +158,7 @@ reg<-reg %>%
 
 #Calculating percentages of those who registered of the total population, registered AND took the test, and those who took the test of the total population
 reg<-reg%>%
-  mutate(regPct = registered/enroll)%>%
-  mutate(tookPct = took/enroll)%>%
-  mutate(yield = took/registered)
-
+  mutate(regPct = registered*100/enroll, tookPct = took*100/enroll, yield = took/registered)
 
 #What does the table currently look like?
 str(reg)
@@ -496,15 +493,15 @@ Let's start with clustering. We can only use District 5 data, since they are the
 ```{r message=FALSE, warning=FALSE, include=FALSE, paged.print=FALSE}
 num.school <- school_clean%>%
   filter(!is.na(took))%>%
-  select(-income, -City, -address, -DBN, -registered, -yield, -took, enroll,-regPct ,-commSchool, -school, -lat, -long, -zip, -district, -elaAsian, -mathAsian, -mathWhite, -pctELAAsian, -elaAsian, -pctMathAsian, -pctMathWhite, -(contains("rating")))
+  select(-income, -City, -address, -DBN, -registered, -yield, -took, -enroll,-regPct ,-commSchool, -school, -lat, -long, -zip, -district, -elaAsian, -mathAsian, -mathWhite, -pctELAAsian, -elaAsian, -pctMathAsian, -pctMathWhite, -(contains("rating")))
 
 scaled.school<- (scale(num.school))
 schoolPr <- prcomp(scaled.school)
 
 schoolPr
 plot(schoolPr, type = "lines")
-pamk5<- pam(scaled.school, 4)
-plot(silhouette(pamk5))
+pamk<- pam(scaled.school, 5)
+plot(silhouette(pamk))
 biplot(schoolPr)
 ```
 
@@ -535,7 +532,7 @@ clustDist<- hclust(clustDist)
 plot(clustDist)
 
 
-final <- kmeans(scaled.school, centers = 4, nstart = 25)
+final <- kmeans(scaled.school, centers = 2, nstart = 25)
 final
 
 plot(num.school[c("eni","tookPct")], col =  final$cluster)
@@ -547,8 +544,6 @@ When we graph the clusters out, there are some distinct clusters  in eni and who
 
 
 ```{r}
-nearZeroVar(num.school, saveMetrics = T)
-
 
 correlation = cor(scaled.school)
 hc = findCorrelation(correlation, cutoff=0.75)
@@ -571,8 +566,30 @@ print(importance)
 # plot importance
 varImpPlot(fit, type = 2)
 
-modelml <- lm(tookPct~eni + regPct + pctHispanic ,data = num.school)
+modelml <- lm(tookPct~ pctCommunity + pctAttend + elaAll ,data = num.school)
 summary(modelml)
+
+
+###Model Prediction
+set.seed(1234)
+
+
+modelml <- lm(tookPct~ pctCommunity + pctAttend + elaAll, data = num.school)
+summary(modelml)
+
+predictTest <- predict(modelml, newdata = num.school)
+
+num.school$tookPct
+predictTest
+
+
+SSE <- sum((num.school$tookPct - predictTest)^2)
+SST <- sum((predictTest - mean(num.school$tookPct))^2)
+
+postResample(pred = predictTest, obs = num.school$tookPct)
+
+
+
 ```
 
-
+Based on the feature selection above, it looks like our optimal model to predict the number of students who take th SHSAT depends on community strength, attendance, and the number of ELA 4 scores schools receive. How interesting.
