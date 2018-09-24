@@ -99,8 +99,13 @@ library(ggplot2)
 library(digest)
 library(corrplot)
 library(ggmap)
+library(data.table)
+library(DT)
 library(GGally)
-source("http://www.sthda.com/upload/rquery_cormat.r")
+library(caret)
+library(cluster)
+library(randomorest)
+library(mlbench)
 ```
 
 
@@ -277,6 +282,12 @@ school_clean <- school_clean%>%
           pctMathAsian = mathAsian / mathAll4,
           pctMathWhite = mathWhite / mathAll4,
           URM4 = mathHispanic + mathBlack + elaHispanic + elaBlack)
+
+
+school_clean[ school_clean == "NaN"] <- 0
+
+school_clean <- school_clean %>%
+      mutate(commSchoolBinary = ifelse(commSchool == "No",0,1))
           
 
 write_csv(school_clean, "SHSAT_data.csv")
@@ -477,4 +488,91 @@ scoreENImodel <- lm(academicScore ~ pctBlackHispanic + eni + p, data = school_cl
 summary(scoreENImodel)
 
 ```
+
+###Machine Learning
+
+Let's start with clustering. We can only use District 5 data, since they are the only schools reporting number of students who took the SHSAT. Note: this is such a small amount of data, we might have that our clusters have weak, or no structure but let's try it out.
+
+```{r message=FALSE, warning=FALSE, include=FALSE, paged.print=FALSE}
+num.school <- school_clean%>%
+  filter(!is.na(took))%>%
+  select(-income, -City, -address, -DBN, -registered, -yield, -took, enroll,-regPct ,-commSchool, -school, -lat, -long, -zip, -district, -elaAsian, -mathAsian, -mathWhite, -pctELAAsian, -elaAsian, -pctMathAsian, -pctMathWhite, -(contains("rating")))
+
+scaled.school<- (scale(num.school))
+schoolPr <- prcomp(scaled.school)
+
+schoolPr
+plot(schoolPr, type = "lines")
+pamk5<- pam(scaled.school, 4)
+plot(silhouette(pamk5))
+biplot(schoolPr)
+```
+
+So based on our plot, we should either use 2 or 5 clusters, but based on our silhouette plot, the reality is with either 2 or 5 clusters, our structure to our clusters in non-existent. We also graphed it out, and this is also the case. This is definitely as a result of a lack of data points. 
+
+Despite that fact, let's see how our schools would be clustered and how much variability they can explain.
+
+```{r}
+
+set.seed(1234)
+
+wss <- 0
+k <- 15
+
+for (i in 1:k){
+  wss[i] <-
+    sum(kmeans(scaled.school, centers=i)$withinss)
+}
+plot(1:15,
+     wss,
+     type="b",
+     xlab="Number of Clusters",
+     ylab="Within groups sum of squares")
+
+
+clustDist<- dist(scaled.school, method = "euclidean")
+clustDist<- hclust(clustDist)
+plot(clustDist)
+
+
+final <- kmeans(scaled.school, centers = 4, nstart = 25)
+final
+
+plot(num.school[c("eni","tookPct")], col =  final$cluster)
+
+```
+So when we use 2 cluters, we can only explain about 22% of the variability which is weak, but with 4 we can explain about 50% which is decent.
+
+When we graph the clusters out, there are some distinct clusters  in eni and who took the test. Although, there is overlap and isn't particularly helpful to us.
+
+
+```{r}
+nearZeroVar(num.school, saveMetrics = T)
+
+
+correlation = cor(scaled.school)
+hc = findCorrelation(correlation, cutoff=0.75)
+hc = sort(hc)
+reduced_Data = num.school[,-c(hc)]
+print (reduced_Data)
+
+corrplot(cor(reduced_Data), type = "upper", method = "square")
+
+
+
+# prepare training scheme
+control <- trainControl(method="repeatedcv", number=10, repeats=3)
+# train the model
+fit<- randomForest(factor(tookPct)~., data=num.school)
+# estimate variable importance
+importance <- varImp(fit)
+# summarize importance
+print(importance)
+# plot importance
+varImpPlot(fit, type = 2)
+
+modelml <- lm(tookPct~eni + regPct + pctHispanic ,data = num.school)
+summary(modelml)
+```
+
 
