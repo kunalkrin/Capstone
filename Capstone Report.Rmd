@@ -106,6 +106,7 @@ library(caret)
 library(cluster)
 library(randomForest)
 library(mlbench)
+library(factoextra)
 ```
 
 
@@ -283,6 +284,11 @@ school_clean <- school_clean%>%
 
 school_clean[ school_clean == "NaN"] <- 0
 
+school_clean<- school_clean%>%
+  mutate(avgELA= ifelse(is.na(avgELA), mean(avgELA, na.rm=TRUE), avgELA),
+         avgMath= ifelse(is.na(avgMath), mean(avgMath, na.rm=TRUE), avgMath),
+         academicScore = ifelse(is.na(academicScore), mean(academicScore, na.rm=TRUE), academicScore))
+
 school_clean <- school_clean %>%
       mutate(commSchoolBinary = ifelse(commSchool == "No",0,1))
           
@@ -313,12 +319,12 @@ Need Index1 is more than 10 percentage points from the citywide average. A schoo
 
 ### Demographics
 ```{r echo=F, message=FALSE, warning=FALSE, paged.print=TRUE}
-race<-gather(school_clean, race, percent, pctAsian:pctWhite, factor_key=TRUE)
+reg3<-gather(school_clean, race, percent, pctAsian:pctWhite, factor_key=TRUE)
 
-head(race)
+head(reg3)
 
 #Racial Demographic Distribution
-ggplot(race, aes(x = percent, fill = race)) +
+ggplot(reg3, aes(x = percent, fill = race)) +
   geom_density() +
   facet_grid(race ~ .) +
   labs(title="Distributions of Students by Race")
@@ -329,10 +335,10 @@ Most NY schools have a low White and Asian population, but a high URM population
 ```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
 
 
-toBeRemoved<-which(race$race=="pctBlackHispanic")
-raceWithoutURM <-race[-toBeRemoved,]
+toBeRemoved<-which(reg3$race=="pctBlackHispanic")
+reg4 <-reg3[-toBeRemoved,]
 
-ggplot(raceWithoutURM, aes( x = as.factor(district), fill = race)) + 
+ggplot(reg4, aes( x = as.factor(district), fill = race)) + 
   geom_bar() + 
   labs(title="Racial Breakdown per District", 
        x= "District",
@@ -345,7 +351,7 @@ From our Districts, we can see that most of our students come from Districts 9, 
 #Heatmap of Race
 map <- get_map(location = "New York City", zoom= 11, maptype = "terrain", source="google")
 ggmap(map) +
-  stat_summary_2d(geom = "tile",bins = 50, data= race, aes(x = long, y = lat, z = percent), alpha=0.5) +
+  stat_summary_2d(geom = "tile",bins = 50, data= reg3, aes(x = long, y = lat, z = percent), alpha=0.5) +
   scale_fill_gradient(low = "green", high = "red", guide = guide_legend(title = "Density")) +
   labs(x = "", y= "")
 ```
@@ -356,7 +362,7 @@ From this exploratory plot, we're seeing that race and income interact with each
 ```{r echo=F, message=FALSE, warning=FALSE, paged.print=TRUE}
 #Heatmap of ENI
 ggmap(map) +
-  stat_summary_2d(geom = "tile",bins = 15, data=race, aes(x = long, y = lat, z = eni), alpha=0.5) +
+  stat_summary_2d(geom = "tile",bins = 15, data=reg3, aes(x = long, y = lat, z = eni), alpha=0.5) +
   scale_fill_gradient(low = "green", high = "red", guide = guide_legend(title = "ENI")) +
   labs(x = "", y= "")
 ```
@@ -364,7 +370,7 @@ ggmap(map) +
 As suspected, our schools with a high URM have a high ENI. Let's further explore:
 
 ```{r echo=F, message=FALSE, warning=FALSE, paged.print=TRUE}
-ggplot(race, aes(x = eni, y = percent, col = race)) +
+ggplot(reg3, aes(x = eni, y = percent, col = race)) +
   geom_point() +
   facet_wrap(.~race)
 
@@ -397,20 +403,20 @@ Economic need is a strong predictor of how well a school will do and it makes se
 ##Examining Academic Performance
 ```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
 
-score <- gather(school_clean, race, count, c(elaBlack, elaHispanic, mathBlack, mathHispanic), factor_key=TRUE)
-score <- score %>%
+reg2 <- gather(school_clean, race, count, c(elaBlack, elaHispanic, mathBlack, mathHispanic), factor_key=TRUE)
+reg2 <- reg2 %>%
   filter(!is.na(count) & count>0)
 
-score$countScale<- scale(score$count)
+reg2$countScale<- scale(reg2$count)
 
-school_16<- score %>%
+school_16<- reg2 %>%
   group_by(school)%>%
   filter(countScale>1)%>%
   summarise(count = sum(count))
 
 
 #Racial Demographic Distribution
-ggplot(score, aes(y = count, x = eni, col = race)) +
+ggplot(reg2, aes(y = count, x = eni, col = race)) +
   geom_point() +
   facet_grid(. ~ race) +
   labs(title="Distributions of Highest Scores by Students and Race")
@@ -432,11 +438,11 @@ Just as recruiters for companies have "target schools" from which they heavily r
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
 ggmap(map) +
-  stat_summary_2d (geom = "tile", bins = 10, data = score, aes(x = long, y = lat, z = count), alpha = 0.6) +
+  stat_summary_2d (geom = "tile", bins = 10, data = reg2, aes(x = long, y = lat, z = count), alpha = 0.6) +
   scale_fill_gradient(low = "black", high = "green", guide = guide_legend(title = "Density of 4 Scores")) +
   labs( x="",
         y ="")
-ggplot(score, aes(x=reorder(City,count, length))) +
+ggplot(reg2, aes(x=reorder(City,count, length))) +
   geom_bar(fill = "orange") +
   theme(axis.text.x = element_text(angle = 90, hjust = 1))
 ggplot(school_clean, aes(pctHispanic, avgMath)) +
@@ -479,10 +485,6 @@ school_clean%>%
   select(eni, income, URM4, contains("pct"), contains('Black'), starts_with('avg'), starts_with('quant'))%>%
   cor(use = "pairwise.complete.obs") %>%
   corrplot(type = "upper", method = "square") 
-
-
-scoreENImodel <- lm(academicScore ~ pctBlackHispanic + eni + p, data = school_clean)
-summary(scoreENImodel)
 
 ```
 
@@ -532,7 +534,7 @@ clustDist<- hclust(clustDist)
 plot(clustDist)
 
 
-final <- kmeans(scaled.school, centers = 2, nstart = 25)
+final <- kmeans(scaled.school, centers = 4, nstart = 25)
 final
 
 plot(num.school[c("eni","tookPct")], col =  final$cluster)
@@ -544,7 +546,7 @@ When we graph the clusters out, there are some distinct clusters  in eni and who
 
 
 ```{r}
-
+#Feature Selection and Cross Validation
 correlation = cor(scaled.school)
 hc = findCorrelation(correlation, cutoff=0.75)
 hc = sort(hc)
@@ -555,10 +557,96 @@ corrplot(cor(reduced_Data), type = "upper", method = "square")
 
 
 
+modelml <- lm(tookPct~ pctCommunity + pctAttend + elaAll ,data = num.school)
+summary(modelml)
+```
+
+Based on the feature selection above, it looks like our optimal model to predict the number of students who take th SHSAT depends on community strength, attendance, and the number of ELA 4 scores schools receive. How interesting.
+
+```{r}
+### Model Prediction (filling in the took %)
+set.seed(1234)
+
+modelml <- lm(tookPct~ pctCommunity + pctAttend + elaAll, data = num.school)
+summary(modelml)
+
+predictTest <- predict(modelml, newdata = num.school)
+
+postResample(pred = predictTest, obs = num.school$tookPct)
+
+
+#new dataset with filled took %
+schoolPredict <- school_clean %>%
+  mutate(tookPct = predict(modelml, school_clean))%>%
+  filter(!is.na(tookPct))%>%
+  select(-income, -City, -address, -DBN, -registered, -yield, -took, -enroll,-regPct ,-commSchool, -school, -lat, -long, -zip, -district, -elaAsian, -mathAsian, -mathWhite, -pctELAAsian, -elaAsian, -pctMathAsian, -pctMathWhite, -(contains("rating")))
+
+#remove nzv
+nzv_cols <- nearZeroVar(schoolPredict)
+if(length(nzv_cols) > 0) schoolPredict <- schoolPredict[, -nzv_cols]
+
+#remove high corr
+correlation = cor(schoolPredict, -tookFactor)
+hc2 = findCorrelation(correlation, cutoff=0.5)
+hc2 = sort(hc2)
+schoolPredict = schoolPredict[,-c(hc2)]
+
+#elbow and silhouette
+fviz_nbclust(schoolPredict, kmeans, method = "wss")
+fviz_nbclust(schoolPredict, kmeans, method = "silhouette")
+final <- kmeans(schoolPredict, 2, nstart = 25)
+print(final)
+fviz_cluster(final, data = schoolPredict)
+
+
+schoolPredict %>%
+  mutate(Cluster = final$cluster) %>%
+  group_by(Cluster) %>%
+  summarise_all("mean")
+
+### Random Forest
+
+schoolPredict$tookFactor <- ifelse(schoolPredict$tookPct < .15, 'low', 'high')
+schoolPredict$tookFactor[schoolPredict$tookPct >= .16 & schoolPredict$tookPct <= .30] <- 'okay'
+schoolPredict$tookFactor <- as.factor(schoolPredict$tookFactor)
+summary(schoolPredict$tookFactor)
+
+
+set.seed(1234)
+model <- randomForest(tookPct ~ . -tookFactor, data = train)
+pred <- predict(model, newdata = test)
+table(pred, test$tookPct)
+
+
+trainIndex <- createDataPartition(na.omit(schoolPredict$tookPct), p = .8, 
+                                  list = FALSE, 
+                                  times = 1)
+head(trainIndex)
+
+train <- schoolPredict[ trainIndex,]
+test  <- schoolPredict[-trainIndex,]
+
 # prepare training scheme
-control <- trainControl(method="repeatedcv", number=10, repeats=3)
+train_control <- trainControl(method="repeatedcv", number=10, repeats=3)
 # train the model
-fit<- randomForest(factor(tookPct)~., data=num.school)
+model <- train(tookFactor~., data=schoolPredict, trControl=train_control, method="nb")
+# summarize results
+print(model)
+plot(model)
+
+#Bayes gives us a 90% accuracy.
+pred1<-predict(model, newdata = test)
+table(pred1, test$tookFactor)
+
+
+
+#Random Forest gives us a 99.6% accuracy.
+fit<- randomForest(tookFactor~.,  data = train)
+pred <- predict(fit, newdata = test)
+table(pred, test$tookFactor)
+
+
+fit
 # estimate variable importance
 importance <- varImp(fit)
 # summarize importance
@@ -566,30 +654,13 @@ print(importance)
 # plot importance
 varImpPlot(fit, type = 2)
 
-modelml <- lm(tookPct~ pctCommunity + pctAttend + elaAll ,data = num.school)
-summary(modelml)
-
-
-###Model Prediction
-set.seed(1234)
-
-
-modelml <- lm(tookPct~ pctCommunity + pctAttend + elaAll, data = num.school)
-summary(modelml)
-
-predictTest <- predict(modelml, newdata = num.school)
-
-num.school$tookPct
-predictTest
-
-
-SSE <- sum((num.school$tookPct - predictTest)^2)
-SST <- sum((predictTest - mean(num.school$tookPct))^2)
-
-postResample(pred = predictTest, obs = num.school$tookPct)
-
-
-
 ```
+After testing the model, it's not bad: we get an R-squared of .566. Now let's use this model to predict other schools' turnouts for the SHSAT.
 
-Based on the feature selection above, it looks like our optimal model to predict the number of students who take th SHSAT depends on community strength, attendance, and the number of ELA 4 scores schools receive. How interesting.
+#Recommendation 3: Target the schools using this specialized model.
+
+Based on the model we created, we can predict which schools will have low turnouts based on the model. Note that the model is using a small data set and won't be the most accurate, but it does give us a pretty good sense of where NYCPASS's programs will make an impact.
+
+
+
+
