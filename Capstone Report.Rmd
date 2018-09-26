@@ -96,9 +96,12 @@ Let's load some libraries we will use.
 ```{r message=FALSE, warning=FALSE, paged.print=FALSE}
 library(tidyverse)
 library(ggplot2)
+library(cluster)
+library(scatterplot3d)
 library(digest)
 library(corrplot)
 library(ggmap)
+library(factoextra)
 library(data.table)
 library(DT)
 library(GGally)
@@ -106,7 +109,7 @@ library(caret)
 library(cluster)
 library(randomForest)
 library(mlbench)
-library(factoextra)
+library(ggmap)
 ```
 
 
@@ -347,7 +350,7 @@ ggplot(reg4, aes( x = as.factor(district), fill = race)) +
 ```
 From our Districts, we can see that most of our students come from Districts 9, 10, 31, 2, and 27.
 
-```{r echo=F, message=FALSE, warning=FALSE, paged.print=TRUE}
+```{r echo=F, message=FALSE, warning=FALSE, paged.print=TRUE, error= T}
 #Heatmap of Race
 map <- get_map(location = "New York City", zoom= 11, maptype = "terrain", source="google")
 ggmap(map) +
@@ -359,7 +362,7 @@ From the looks of our graphs, schools are racially stratified within NYC. Asian 
 
 From this exploratory plot, we're seeing that race and income interact with each other in the form of stratification, so let's take further look at the ENI of NYC:
 
-```{r echo=F, message=FALSE, warning=FALSE, paged.print=TRUE}
+```{r echo=F, message=FALSE, warning=FALSE, paged.print=TRUE, error= T}
 #Heatmap of ENI
 ggmap(map) +
   stat_summary_2d(geom = "tile",bins = 15, data=reg3, aes(x = long, y = lat, z = eni), alpha=0.5) +
@@ -369,7 +372,7 @@ ggmap(map) +
 
 As suspected, our schools with a high URM have a high ENI. Let's further explore:
 
-```{r echo=F, message=FALSE, warning=FALSE, paged.print=TRUE}
+```{r echo=F, message=FALSE, warning=FALSE, paged.print=TRUE, }
 ggplot(reg3, aes(x = eni, y = percent, col = race)) +
   geom_point() +
   facet_wrap(.~race)
@@ -393,7 +396,6 @@ ggplot(school_clean, aes(eni, academicScore)) +
        y="Aggregate ELA and Math Scores")
 scoreENImodel <- lm(academicScore ~ eni + pctBlackHispanic, data = school_clean)
 summary(scoreENImodel)
-plot(scoreENImodel)
 ```
 
 Economic need is a strong predictor of how well a school will do and it makes sense-- the higher the need students have, the lower the scores will be due to resource insecurity. As we've found out from before, ENI and race have a relatively strong correlation, but there must be schools that despite their high ENI, produce a high number of 4s.
@@ -425,7 +427,7 @@ summary(school_clean)
 ```
 
 
-One way of understanding performance is examining the number of URM students receiving 4s for their exams, but not just any schools, why not target the highest schools? We target schools who fall 1 standard deviation above the mean (top 2.5% of schools) to produce a list of schools we can specifically target with NYCPASS's programs to further bolster their numbers:
+One way of understanding performance is examining the number of URM students receiving 4s for their exams, but not just any schools, why not target the highest schools? We target schools who fall 1 standard deviation above the mean (top 16% of schools) to produce a list of schools we can specifically target with NYCPASS's programs to further bolster their numbers:
 
 ```{r}
 school_16 <- school_16 %>%
@@ -433,10 +435,10 @@ school_16 <- school_16 %>%
 school_16
 ```
 ### Recommendation 1
-Just as recruiters for companies have "target schools" from which they heavily recruit their college graduate workforce, NYCPASS can have target schools where they would want to implement/pilot their programs, and focus their financial and human resources. The schools above represent the the top 2.5% schools with URMs that receive 4s (the highest score) on the SHSAT.
+Just as recruiters for companies have "target schools" from which they heavily recruit their college graduate workforce, NYCPASS can have target schools where they would want to implement/pilot their programs, and focus their financial and human resources. The schools above represent the the top 16% schools with URMs that receive 4s (the highest score) on the SHSAT.
 
 
-```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE, error= T}
 ggmap(map) +
   stat_summary_2d (geom = "tile", bins = 10, data = reg2, aes(x = long, y = lat, z = count), alpha = 0.6) +
   scale_fill_gradient(low = "black", high = "green", guide = guide_legend(title = "Density of 4 Scores")) +
@@ -476,7 +478,7 @@ Based on the information above, we can see there is a clear corridor of high sco
 
 
 ## Correlation Matrix
-```{r}
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
 numeric<- na.omit(school_clean)
 
 numeric
@@ -495,114 +497,94 @@ Let's start with clustering. We can only use District 5 data, since they are the
 ```{r message=FALSE, warning=FALSE, include=FALSE, paged.print=FALSE}
 num.school <- school_clean%>%
   filter(!is.na(took))%>%
-  select(-income, -City, -address, -DBN, -registered, -yield, -took, -enroll,-regPct ,-commSchool, -school, -lat, -long, -zip, -district, -elaAsian, -mathAsian, -mathWhite, -pctELAAsian, -elaAsian, -pctMathAsian, -pctMathWhite, -(contains("rating")))
+  select(-income, -City, -address, -DBN, -registered, -yield, -took, -enroll,-regPct, -commSchool, -lat, -long, -zip, -district, -elaAsian, -mathAsian, -mathWhite, -pctELAAsian, -elaAsian, -pctMathAsian, -pctMathWhite, -(contains("rating")))
 
-scaled.school<- (scale(num.school))
-schoolPr <- prcomp(scaled.school)
+scaled.school<- (scale(num.school[,2:43]))
 
-schoolPr
-plot(schoolPr, type = "lines")
-pamk<- pam(scaled.school, 5)
-plot(silhouette(pamk))
-biplot(schoolPr)
+
+fviz_nbclust(scaled.school, kmeans, method = "wss")
+fviz_nbclust(scaled.school, kmeans, method = "silhouette")
+final <- kmeans(scaled.school, 3, nstart = 25)
+print(final)
+fviz_cluster(final, data = scaled.school)
+
+numsum<- num.school %>%
+  mutate(Cluster = final$cluster) %>%
+  group_by(Cluster) %>%
+  summarise_all("mean")
+
+str(numsum)
 ```
 
-So based on our plot, we should either use 2 or 5 clusters, but based on our silhouette plot, the reality is with either 2 or 5 clusters, our structure to our clusters in non-existent. We also graphed it out, and this is also the case. This is definitely as a result of a lack of data points. 
+So based on our elbow and silhouette plots, we should either use 2 or 3 clusters, but based on our silhouette plot, the reality is with either choice, the low number of data points gives us clusters with weak to non-existent structure. Nonetheless, the analysis above does render some interesting information.
 
-Despite that fact, let's see how our schools would be clustered and how much variability they can explain.
+For the purpose of our analysis, we used 3 clusters (because there's an interesting outlier as we can see), which explains about 40% of our variability. It's not too bad given our limited data. So what did we find?
 
-```{r}
+* Cluster 2 (Well Off Cluster)is distinct because it has a much lower ENI (wealthier), larger Asian and White population, no one learning ELL, higher attendance rates, higher test scores, higher academic scores, and perfect psychosocial ratings.
 
-set.seed(1234)
+* Cluster 3 (Diverse Cluster) is distinct because it has the highest ENI of the three groups, lowest leadership and trust scores, lowest psychosocial ratings, lowest test scores, lowest number of 4s, and highest number of community schools.
 
-wss <- 0
-k <- 15
+```{r message=FALSE, warning=FALSE, include=FALSE, paged.print=FALSE}
 
-for (i in 1:k){
-  wss[i] <-
-    sum(kmeans(scaled.school, centers=i)$withinss)
-}
-plot(1:15,
-     wss,
-     type="b",
-     xlab="Number of Clusters",
-     ylab="Within groups sum of squares")
-
-
-clustDist<- dist(scaled.school, method = "euclidean")
-clustDist<- hclust(clustDist)
-plot(clustDist)
-
-
-final <- kmeans(scaled.school, centers = 4, nstart = 25)
-final
-
-plot(num.school[c("eni","tookPct")], col =  final$cluster)
+num.school %>%
+  mutate(Cluster = final$cluster)%>%
+  filter(Cluster ==1)
 
 ```
-So when we use 2 cluters, we can only explain about 22% of the variability which is weak, but with 4 we can explain about 50% which is decent.
 
-When we graph the clusters out, there are some distinct clusters  in eni and who took the test. Although, there is overlap and isn't particularly helpful to us.
+### Recommendation 2.5
+
+*Cluster 1 (Hi-Potential Cluster) is distinct because it has the highest number of URMs, lowest attendance rates, highest math scores for URMs, and most number of URM 4 scores. These schools represent a high diversity, high performance demographic as in many ways it replicates the performance of cluster 2, but the diversity and social needs of Cluster 3. While out of scope for this project, one recommendation for NYPASS is to find schools with similar characteristics of this school and invest their time and resources since it represents a school with high potential for increasing diversity in the SHSATs.
 
 
-```{r}
-#Feature Selection and Cross Validation
+Now we will build a linear regression model that will predict turnout based on variables with high correlations, but first we will need to remove high correlation variables to prevent overfitting.
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+#Linear model to predict the SHSAT test rates for other districts
 correlation = cor(scaled.school)
 hc = findCorrelation(correlation, cutoff=0.75)
 hc = sort(hc)
 reduced_Data = num.school[,-c(hc)]
 print (reduced_Data)
 
-corrplot(cor(reduced_Data), type = "upper", method = "square")
 
+corrplot(cor(reduced_Data[2:21]), type = "upper", method = "square")
 
-
-modelml <- lm(tookPct~ pctCommunity + pctAttend + elaAll ,data = num.school)
-summary(modelml)
 ```
 
-Based on the feature selection above, it looks like our optimal model to predict the number of students who take th SHSAT depends on community strength, attendance, and the number of ELA 4 scores schools receive. How interesting.
+Based on the feature selection above, it looks like our optimal model to predict the number of students who take the SHSAT depends on community strength, attendance, and the number of ELA 4 scores schools receive. How interesting.
 
-```{r}
-### Model Prediction (filling in the took %)
-set.seed(1234)
-
-modelml <- lm(tookPct~ pctCommunity + pctAttend + elaAll, data = num.school)
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+modelml <- lm(tookPct~ pctCommunity + pctAttend + elaAll ,data = num.school)
 summary(modelml)
-
-predictTest <- predict(modelml, newdata = num.school)
-
-postResample(pred = predictTest, obs = num.school$tookPct)
 
 
 #new dataset with filled took %
 schoolPredict <- school_clean %>%
   mutate(tookPct = predict(modelml, school_clean))%>%
   filter(!is.na(tookPct))%>%
-  select(-income, -City, -address, -DBN, -registered, -yield, -took, -enroll,-regPct ,-commSchool, -school, -lat, -long, -zip, -district, -elaAsian, -mathAsian, -mathWhite, -pctELAAsian, -elaAsian, -pctMathAsian, -pctMathWhite, -(contains("rating")))
+  select(-income, -City, -address, -DBN, -registered, -yield, -took, -enroll,-regPct ,-commSchool, -school, -lat, -long, -zip, -district, -elaAsian, -mathAsian, -mathWhite, -pctELAAsian, -elaAsian, -pctCommunity, -pctAttend, -elaAll, -mathAll, -quantCommunity, -pctMathAsian, -pctMathWhite, -(contains("rating")))
+```
 
+Now that we've created our model and predicted the values for the other districts, we will use k-means clustering, Naive Bayes and Random Forests to build models to predict SHSAT turnout.
+ 
+
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
 #remove nzv
-nzv_cols <- nearZeroVar(schoolPredict)
-if(length(nzv_cols) > 0) schoolPredict <- schoolPredict[, -nzv_cols]
-
-#remove high corr
-correlation = cor(schoolPredict, -tookFactor)
-hc2 = findCorrelation(correlation, cutoff=0.5)
-hc2 = sort(hc2)
-schoolPredict = schoolPredict[,-c(hc2)]
+nzv_cols2 <- nearZeroVar(schoolPredict)
+if(length(nzv_cols2) > 0) schoolPredict <- schoolPredict[, -nzv_cols2]
 
 #elbow and silhouette
 fviz_nbclust(schoolPredict, kmeans, method = "wss")
 fviz_nbclust(schoolPredict, kmeans, method = "silhouette")
-final <- kmeans(schoolPredict, 2, nstart = 25)
-print(final)
-fviz_cluster(final, data = schoolPredict)
+final2 <- kmeans(schoolPredict, 2, nstart = 25)
+print(final2)
+fviz_cluster(final2, data = schoolPredict)
+
+#explains 52.9%% variability and surprisingly little overlap
 
 
-schoolPredict %>%
-  mutate(Cluster = final$cluster) %>%
-  group_by(Cluster) %>%
-  summarise_all("mean")
+schoolPredict <- schoolPredict %>%
+  mutate(Cluster = final2$cluster)
 
 ### Random Forest
 
@@ -612,11 +594,7 @@ schoolPredict$tookFactor <- as.factor(schoolPredict$tookFactor)
 summary(schoolPredict$tookFactor)
 
 
-set.seed(1234)
-model <- randomForest(tookPct ~ . -tookFactor, data = train)
-pred <- predict(model, newdata = test)
-table(pred, test$tookPct)
-
+set.seed(123)
 
 trainIndex <- createDataPartition(na.omit(schoolPredict$tookPct), p = .8, 
                                   list = FALSE, 
@@ -629,37 +607,31 @@ test  <- schoolPredict[-trainIndex,]
 # prepare training scheme
 train_control <- trainControl(method="repeatedcv", number=10, repeats=3)
 # train the model
-model <- train(tookFactor~., data=schoolPredict, trControl=train_control, method="nb")
+nbmodel <- train(tookFactor~.-tookPct, data=train, trControl=train_control, method="nb")
 # summarize results
-print(model)
-plot(model)
+print(nbmodel)
 
-#Bayes gives us a 90% accuracy.
-pred1<-predict(model, newdata = test)
+#Bayes gives us a 73.8%% accuracy.
+pred1<-predict(nbmodel, newdata = test)
 table(pred1, test$tookFactor)
 
 
-
-#Random Forest gives us a 99.6% accuracy.
-fit<- randomForest(tookFactor~.,  data = train)
-pred <- predict(fit, newdata = test)
+#Random Forest gives us a 82.7% accuracy.
+rfmodel <- randomForest(tookFactor ~ . -tookPct, data = train, importance = T)
+pred <- predict(rfmodel, newdata = test)
 table(pred, test$tookFactor)
 
 
-fit
+rfmodel
 # estimate variable importance
-importance <- varImp(fit)
+importance <- varImp(rfmodel)
 # summarize importance
 print(importance)
 # plot importance
-varImpPlot(fit, type = 2)
+varImpPlot(rfmodel, type = 2)
 
 ```
-After testing the model, it's not bad: we get an R-squared of .566. Now let's use this model to predict other schools' turnouts for the SHSAT.
 
-#Recommendation 3: Target the schools using this specialized model.
-
-Based on the model we created, we can predict which schools will have low turnouts based on the model. Note that the model is using a small data set and won't be the most accurate, but it does give us a pretty good sense of where NYCPASS's programs will make an impact.
 
 
 
