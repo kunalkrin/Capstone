@@ -574,15 +574,32 @@ nzv_cols2 <- nearZeroVar(schoolPredict)
 if(length(nzv_cols2) > 0) schoolPredict <- schoolPredict[, -nzv_cols2]
 
 #elbow and silhouette
-fviz_nbclust(schoolPredict, kmeans, method = "wss")
-fviz_nbclust(schoolPredict, kmeans, method = "silhouette")
-final2 <- kmeans(schoolPredict, 2, nstart = 25)
+schoolPredictClust<- schoolPredict%>% select(-tookPct)
+fviz_nbclust(schoolPredictClust, kmeans, method = "wss")
+fviz_nbclust(schoolPredictClust, kmeans, method = "silhouette")
+final2 <- kmeans(schoolPredictClust, 2, nstart = 25)
 print(final2)
-fviz_cluster(final2, data = schoolPredict)
+fviz_cluster(final2, data = schoolPredictClust)
 
-#explains 52.9%% variability and surprisingly little overlap
+#clustering
+schoolPredictSum<- schoolPredictClust%>%
+  mutate(Cluster = final2$cluster) %>%
+  group_by(Cluster) %>%
+  summarise_all("mean")
+
+str(schoolPredictSum)
+```
+
+Cluster 1 (Well-Off) has a lower ENI, larger white and Asian population, lower chronic absenteeism, substantially more 4s and URM 4 scores despite there being less of them in the district.
+
+Clust 2 (High Need) has a higher ENI, about double the URM population and absentee rates of the Well-Off cluster, very low number of 4 scores, and many community schools.
+
+The cluster analysis above sets k=2 which explains for about 52.9% of our variability which is not bad at all.
 
 
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+
+#include clusters as features
 schoolPredict <- schoolPredict %>%
   mutate(Cluster = final2$cluster)
 
@@ -590,19 +607,25 @@ schoolPredict <- schoolPredict %>%
 
 schoolPredict$tookFactor <- ifelse(schoolPredict$tookPct < .15, 'low', 'high')
 schoolPredict$tookFactor[schoolPredict$tookPct >= .16 & schoolPredict$tookPct <= .30] <- 'okay'
-schoolPredict$tookFactor <- as.factor(schoolPredict$tookFactor)
+schoolPredict$tookFactor <- factor(schoolPredict$tookFactor, levels = c("low", "okay", "high"), ordered = T)
 summary(schoolPredict$tookFactor)
-
 
 set.seed(123)
 
-trainIndex <- createDataPartition(na.omit(schoolPredict$tookPct), p = .8, 
+trainIndex <- createDataPartition((schoolPredict$tookFactor), p = .6, 
                                   list = FALSE, 
                                   times = 1)
-head(trainIndex)
 
 train <- schoolPredict[ trainIndex,]
 test  <- schoolPredict[-trainIndex,]
+
+ValidationIndex <- createDataPartition((test$tookFactor), p = .6, 
+                                  list = FALSE, 
+                                  times = 1)
+
+validation <- test[ ValidationIndex,]
+test  <- test[-ValidationIndex,]
+
 
 # prepare training scheme
 train_control <- trainControl(method="repeatedcv", number=10, repeats=3)
@@ -611,16 +634,15 @@ nbmodel <- train(tookFactor~.-tookPct, data=train, trControl=train_control, meth
 # summarize results
 print(nbmodel)
 
-#Bayes gives us a 73.8%% accuracy.
-pred1<-predict(nbmodel, newdata = test)
-table(pred1, test$tookFactor)
+#Bayes gives us a 73%% accuracy.
+pred1<-predict(nbmodel, newdata = validation)
+confusionMatrix(pred1, validation$tookFactor)
 
 
-#Random Forest gives us a 82.7% accuracy.
+#Random Forest gives us a 81.7% accuracy.
 rfmodel <- randomForest(tookFactor ~ . -tookPct, data = train, importance = T)
-pred <- predict(rfmodel, newdata = test)
-table(pred, test$tookFactor)
-
+pred <- predict(rfmodel, newdata = validation)
+confusionMatrix(pred, validation$tookFactor)
 
 rfmodel
 # estimate variable importance
@@ -629,6 +651,10 @@ importance <- varImp(rfmodel)
 print(importance)
 # plot importance
 varImpPlot(rfmodel, type = 2)
+
+#We are selecting Random Forest model as our final model. We get 81.8% accuracy.
+pred2 <- predict(rfmodel, newdata = test)
+confusionMatrix(pred2, test$tookFactor)
 
 ```
 
